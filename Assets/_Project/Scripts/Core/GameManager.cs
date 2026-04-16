@@ -319,7 +319,7 @@ namespace WorldOfVictoria.Core
             }
 
             material.SetTexture("_SkyLightVolume", runtimeSkyLightVolume);
-            material.SetFloat("_LightVolumeStrength", 0.55f);
+            material.SetFloat("_LightVolumeStrength", 0.22f);
             material.SetVector("_WorldLightVolumeSize", new Vector4(runtimeWorldData.Width, runtimeWorldData.Depth, runtimeWorldData.Height, 0f));
         }
 

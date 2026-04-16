@@ -11,6 +11,9 @@ namespace WorldOfVictoria.Chunking
         public readonly List<int> AllTriangles = new();
         public readonly List<Vector2> UVs = new();
         public readonly List<Vector4> Metadata = new();
+        public readonly List<Vector4> LightCorners = new();
+        public readonly List<Vector4> AoCorners = new();
+        public readonly List<Vector4> FaceCenters = new();
         public readonly List<Color32> Colors = new();
         public readonly List<Vector3> Normals = new();
         public readonly List<Vector4> Tangents = new();
@@ -27,6 +30,9 @@ namespace WorldOfVictoria.Chunking
             AllTriangles.Clear();
             UVs.Clear();
             Metadata.Clear();
+            LightCorners.Clear();
+            AoCorners.Clear();
+            FaceCenters.Clear();
             Colors.Clear();
             Normals.Clear();
             Tangents.Clear();

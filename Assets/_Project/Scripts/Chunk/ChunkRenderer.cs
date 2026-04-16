@@ -35,6 +35,9 @@ namespace WorldOfVictoria.Chunking
             mesh.SetVertices(meshData.Vertices);
             mesh.SetUVs(0, meshData.UVs);
             mesh.SetUVs(1, meshData.Metadata);
+            mesh.SetUVs(2, meshData.LightCorners);
+            mesh.SetUVs(3, meshData.AoCorners);
+            mesh.SetUVs(4, meshData.FaceCenters);
             mesh.SetColors(meshData.Colors);
             mesh.SetNormals(meshData.Normals);
             mesh.SetTangents(meshData.Tangents);

@@ -151,32 +151,32 @@ namespace WorldOfVictoria.Chunking
         {
             if (!worldData.IsSolidBlock(x, y - 1, z))
             {
-                AppendFace(meshData, worldData, BottomFace, QuadUVs, BottomNormal, HorizontalTangent, x, y, z, blockType, 0, tileId, worldData.GetBrightness(x, y - 1, z) * 1.0f, 1.0f);
+                AppendFace(meshData, worldData, BottomFace, QuadUVs, BottomNormal, HorizontalTangent, x, y, z, blockType, 0, tileId, worldData.GetNormalizedSkyLight(x, y - 1, z), 1.0f);
             }
 
             if (!worldData.IsSolidBlock(x, y + 1, z))
             {
-                AppendFace(meshData, worldData, TopFace, QuadUVs, TopNormal, HorizontalTangent, x, y, z, blockType, 1, tileId, worldData.GetBrightness(x, y + 1, z) * 1.0f, 1.0f);
+                AppendFace(meshData, worldData, TopFace, QuadUVs, TopNormal, HorizontalTangent, x, y, z, blockType, 1, tileId, worldData.GetNormalizedSkyLight(x, y + 1, z), 1.0f);
             }
 
             if (!worldData.IsSolidBlock(x, y, z - 1))
             {
-                AppendFace(meshData, worldData, NorthFace, NorthFaceUVs, NorthNormal, HorizontalTangent, x, y, z, blockType, 2, tileId, worldData.GetBrightness(x, y, z - 1) * 0.85f, 0.85f);
+                AppendFace(meshData, worldData, NorthFace, NorthFaceUVs, NorthNormal, HorizontalTangent, x, y, z, blockType, 2, tileId, worldData.GetNormalizedSkyLight(x, y, z - 1), 1.0f);
             }
 
             if (!worldData.IsSolidBlock(x, y, z + 1))
             {
-                AppendFace(meshData, worldData, SouthFace, SouthFaceUVs, SouthNormal, HorizontalTangent, x, y, z, blockType, 3, tileId, worldData.GetBrightness(x, y, z + 1) * 0.85f, 0.85f);
+                AppendFace(meshData, worldData, SouthFace, SouthFaceUVs, SouthNormal, HorizontalTangent, x, y, z, blockType, 3, tileId, worldData.GetNormalizedSkyLight(x, y, z + 1), 1.0f);
             }
 
             if (!worldData.IsSolidBlock(x - 1, y, z))
             {
-                AppendFace(meshData, worldData, WestFace, WestFaceUVs, WestNormal, VerticalTangent, x, y, z, blockType, 4, tileId, worldData.GetBrightness(x - 1, y, z) * 0.75f, 0.75f);
+                AppendFace(meshData, worldData, WestFace, WestFaceUVs, WestNormal, VerticalTangent, x, y, z, blockType, 4, tileId, worldData.GetNormalizedSkyLight(x - 1, y, z), 1.0f);
             }
 
             if (!worldData.IsSolidBlock(x + 1, y, z))
             {
-                AppendFace(meshData, worldData, EastFace, EastFaceUVs, EastNormal, VerticalTangent, x, y, z, blockType, 5, tileId, worldData.GetBrightness(x + 1, y, z) * 0.75f, 0.75f);
+                AppendFace(meshData, worldData, EastFace, EastFaceUVs, EastNormal, VerticalTangent, x, y, z, blockType, 5, tileId, worldData.GetNormalizedSkyLight(x + 1, y, z), 1.0f);
             }
         }
 
@@ -199,40 +199,36 @@ namespace WorldOfVictoria.Chunking
             var vertexStart = meshData.Vertices.Count;
             var vertexBrightness = new float[4];
             var vertexOcclusion = new float[4];
-            var combinedShading = new float[4];
             var faceBrightness = 0f;
 
             for (var i = 0; i < 4; i++)
             {
                 vertexBrightness[i] = SampleVertexBrightness(worldData, x, y, z, faceId, faceVertices[i], brightness);
                 vertexOcclusion[i] = SampleVertexAmbientOcclusion(worldData, x, y, z, faceId, faceVertices[i]);
-                combinedShading[i] = vertexBrightness[i] * vertexOcclusion[i];
                 faceBrightness += vertexBrightness[i];
             }
 
             faceBrightness *= 0.25f;
             var metadata = new Vector4(blockType, faceId, faceBrightness, tileId);
+            var lightCorners = PackQuadCorners(faceUvs, vertexBrightness);
+            var aoCorners = PackQuadCorners(faceUvs, vertexOcclusion);
+            var faceCenter = BuildFaceCenter(x, y, z, faceVertices);
 
             for (var i = 0; i < 4; i++)
             {
                 meshData.Vertices.Add(new Vector3(x, y, z) + faceVertices[i]);
                 meshData.UVs.Add(faceUvs[i]);
                 meshData.Metadata.Add(metadata);
+                meshData.LightCorners.Add(lightCorners);
+                meshData.AoCorners.Add(aoCorners);
+                meshData.FaceCenters.Add(faceCenter);
                 meshData.Colors.Add((Color32)new Color(vertexBrightness[i], vertexBrightness[i], vertexBrightness[i], vertexOcclusion[i]));
                 meshData.Normals.Add(normal);
                 meshData.Tangents.Add(tangent);
             }
 
-            if (combinedShading[0] + combinedShading[2] > combinedShading[1] + combinedShading[3])
-            {
-                AddTriangle(meshData, vertexStart + 0, vertexStart + 1, vertexStart + 3);
-                AddTriangle(meshData, vertexStart + 1, vertexStart + 2, vertexStart + 3);
-            }
-            else
-            {
-                AddTriangle(meshData, vertexStart + 0, vertexStart + 1, vertexStart + 2);
-                AddTriangle(meshData, vertexStart + 0, vertexStart + 2, vertexStart + 3);
-            }
+            AddTriangle(meshData, vertexStart + 0, vertexStart + 1, vertexStart + 2);
+            AddTriangle(meshData, vertexStart + 0, vertexStart + 2, vertexStart + 3);
         }
 
         private static float SampleVertexBrightness(WorldData worldData, int x, int y, int z, int faceId, Vector3 vertex, float fallbackBrightness)
@@ -295,8 +291,52 @@ namespace WorldOfVictoria.Chunking
 
         private static void AddBrightnessSample(WorldData worldData, int x, int y, int z, ref float sampleSum, ref int sampleCount)
         {
-            sampleSum += worldData.GetBrightness(x, y, z);
+            sampleSum += worldData.GetNormalizedSkyLight(x, y, z);
             sampleCount++;
+        }
+
+        private static Vector4 PackQuadCorners(Vector2[] faceUvs, float[] values)
+        {
+            var c00 = values[0];
+            var c10 = values[0];
+            var c11 = values[0];
+            var c01 = values[0];
+
+            for (var i = 0; i < 4; i++)
+            {
+                var uv = faceUvs[i];
+                if (uv.x < 0.5f && uv.y < 0.5f)
+                {
+                    c00 = values[i];
+                }
+                else if (uv.x > 0.5f && uv.y < 0.5f)
+                {
+                    c10 = values[i];
+                }
+                else if (uv.x > 0.5f && uv.y > 0.5f)
+                {
+                    c11 = values[i];
+                }
+                else
+                {
+                    c01 = values[i];
+                }
+            }
+
+            return new Vector4(c00, c10, c11, c01);
+        }
+
+        private static Vector4 BuildFaceCenter(int x, int y, int z, Vector3[] faceVertices)
+        {
+            var center = Vector3.zero;
+            for (var i = 0; i < 4; i++)
+            {
+                center += faceVertices[i];
+            }
+
+            center *= 0.25f;
+            center += new Vector3(x, y, z);
+            return new Vector4(center.x, center.y, center.z, 0f);
         }
 
         private static float SampleVertexAmbientOcclusion(WorldData worldData, int x, int y, int z, int faceId, Vector3 vertex)

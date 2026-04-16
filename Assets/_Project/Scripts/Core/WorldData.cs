@@ -96,6 +96,11 @@ namespace WorldOfVictoria.Core
             return Mathf.SmoothStep(0f, 1f, level / 15f);
         }
 
+        public float GetNormalizedSkyLight(int x, int y, int z)
+        {
+            return GetSkyLightLevel(x, y, z) / 15f;
+        }
+
         public byte GetSkyLightLevel(int x, int y, int z)
         {
             if (!InBounds(x, y, z))

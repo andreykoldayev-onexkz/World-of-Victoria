@@ -77,6 +77,9 @@ Shader "WorldOfVictoria/VoxelPBR"
                 float4 tangentOS : TANGENT;
                 float2 uv : TEXCOORD0;
                 float4 metadata : TEXCOORD1;
+                float4 lightCorners : TEXCOORD2;
+                float4 aoCorners : TEXCOORD3;
+                float4 faceCenter : TEXCOORD4;
                 half4 color : COLOR;
             };
 
@@ -88,7 +91,10 @@ Shader "WorldOfVictoria/VoxelPBR"
                 float4 tangentWS : TEXCOORD2;
                 float2 uv : TEXCOORD3;
                 float4 metadata : TEXCOORD4;
-                float fogFactor : TEXCOORD5;
+                float4 lightCorners : TEXCOORD5;
+                float4 aoCorners : TEXCOORD6;
+                float4 faceCenter : TEXCOORD7;
+                float fogFactor : TEXCOORD8;
                 half4 color : COLOR;
             };
 
@@ -133,6 +139,26 @@ Shader "WorldOfVictoria/VoxelPBR"
                 return (center * 0.55h) + ((sampleX + sampleY + sampleZ) * 0.15h);
             }
 
+            half ApplyRenderedBrightnessCurve(half normalizedLight)
+            {
+                normalizedLight = saturate(normalizedLight);
+                if (normalizedLight <= 0.001h)
+                {
+                    return 0.0h;
+                }
+
+                half remapped = saturate((normalizedLight - 0.02h) / 0.98h);
+                return pow(remapped, 1.35h);
+            }
+
+            half SampleBilinearQuad(float2 uv, float4 corners)
+            {
+                float2 clampedUv = saturate(uv);
+                half bottom = lerp(corners.x, corners.y, clampedUv.x);
+                half top = lerp(corners.w, corners.z, clampedUv.x);
+                return lerp(bottom, top, clampedUv.y);
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output;
@@ -146,6 +172,9 @@ Shader "WorldOfVictoria/VoxelPBR"
                 output.tangentWS = float4(normalInputs.tangentWS.xyz, input.tangentOS.w);
                 output.uv = input.uv;
                 output.metadata = input.metadata;
+                output.lightCorners = input.lightCorners;
+                output.aoCorners = input.aoCorners;
+                output.faceCenter = input.faceCenter;
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 output.color = input.color;
                 return output;
@@ -164,14 +193,17 @@ Shader "WorldOfVictoria/VoxelPBR"
                 float3x3 tbn = float3x3(normalize(input.tangentWS.xyz), normalize(bitangentWS), normalize(input.normalWS));
                 float3 normalWS = normalize(mul(normalTS, tbn));
 
-                half faceBrightness = lerp(1.0h, max(_BrightnessFloor, input.metadata.z), _UseVertexBrightness);
-                half cornerBrightness = lerp(1.0h, max(_BrightnessFloor, input.color.r), _UseVertexBrightness);
-                half brightness = lerp(faceBrightness, cornerBrightness, _VertexLightBlend);
-                half vertexAo = saturate(input.color.a);
+                half faceBrightness = max(_BrightnessFloor, input.metadata.z);
+                half cornerBrightness = max(_BrightnessFloor, SampleBilinearQuad(input.uv, input.lightCorners));
+                half logicalLight = lerp(faceBrightness, cornerBrightness, _VertexLightBlend);
+                half volumeLight = SampleSkyLightVolume(input.faceCenter.xyz, logicalLight);
+                half smoothedLight = lerp(logicalLight, volumeLight, _LightVolumeStrength);
+                half brightness = lerp(1.0h, smoothedLight, _UseVertexBrightness);
+                half vertexAo = saturate(SampleBilinearQuad(input.uv, input.aoCorners));
                 half occlusionAo = lerp(1.0h, vertexAo, _AoStrength);
                 half albedoAo = lerp(1.0h, vertexAo, _AoStrength * 0.2h);
-                half skyVisibility = smoothstep(0.16h, 0.94h, brightness);
-                half lightVisibility = saturate(skyVisibility * skyVisibility);
+                half lightVisibility = ApplyRenderedBrightnessCurve(brightness);
+                half skyVisibility = saturate(pow(lightVisibility, 0.8h));
                 half3 albedo = saturate(((albedoSample.rgb - 0.5h) * _AlbedoContrast) + 0.5h) * _BaseTint.rgb * albedoAo;
 
                 InputData lightingInput = (InputData)0;
@@ -189,7 +221,7 @@ Shader "WorldOfVictoria/VoxelPBR"
                 surfaceData.metallic = _Metallic;
                 surfaceData.smoothness = saturate((1.0h - roughnessSample) + _RoughnessBias);
                 surfaceData.normalTS = normalTS;
-                surfaceData.occlusion = saturate((lerp(0.12h, 1.0h, lightVisibility) + (_ShadowBoost * 0.2h)) * occlusionAo);
+                surfaceData.occlusion = saturate((lerp(0.08h, 1.0h, lightVisibility) + (_ShadowBoost * 0.18h)) * occlusionAo);
                 surfaceData.emission = 0;
                 surfaceData.clearCoatMask = 0;
                 surfaceData.clearCoatSmoothness = 0;

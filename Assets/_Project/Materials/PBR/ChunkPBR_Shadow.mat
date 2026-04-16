@@ -42,15 +42,15 @@ Material:
     m_Ints: []
     m_Floats:
     - _AlbedoContrast: 1.18
-    - _AoStrength: 0.04
+    - _AoStrength: 0.03
     - _BrightnessFloor: 0
-    - _LightVolumeStrength: 0.55
+    - _LightVolumeStrength: 0.22
     - _Metallic: 0
     - _NormalScale: 1
     - _RoughnessBias: 0.02
     - _ShadowBoost: 0.16
     - _UseVertexBrightness: 1
-    - _VertexLightBlend: 0.06
+    - _VertexLightBlend: 0.42
     m_Colors:
     - _BaseTint: {r: 1.08, g: 1.06, b: 1, a: 1}
     - _WorldLightVolumeSize: {r: 256, g: 64, b: 256, a: 0}
