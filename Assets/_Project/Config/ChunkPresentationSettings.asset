@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e42f613b2de35449599f470d34012749, type: 3}
+  m_Name: ChunkPresentationSettings
+  m_EditorClassIdentifier: Assembly-CSharp::WorldOfVictoria.Chunking.ChunkPresentationSettings
+  chunkPrefab: {fileID: 5625908738839078555, guid: c6dbd74c219c643cbadc92283f918d83, type: 3}
+  brightMaterial: {fileID: 2100000, guid: f66d9e6dd068744849a59c0f0df7e95f, type: 2}
+  shadowMaterial: {fileID: 2100000, guid: db7197c217b784dcea4e605ae8342bd8, type: 2}
+  textureLibrary: {fileID: 11400000, guid: 42a9fcfd1d0984977a26293d08c64692, type: 2}
+  buildPreviewOnGenerate: 1
+  previewChunkRadiusXZ: 1
+  previewAllVerticalLayers: 1

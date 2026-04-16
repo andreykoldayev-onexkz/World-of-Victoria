@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 964ecfc57a3154961b312fb0df72ad6f, type: 3}
+  m_Name: WorldConfig
+  m_EditorClassIdentifier: Assembly-CSharp::WorldOfVictoria.Core.WorldConfig
+  width: 256
+  height: 256
+  depth: 64
+  chunkSize: 16
+  caveIterations: 10000
+  caveRadiusRange: {x: 1, y: 7}
+  fogColor: {r: 0.05490196, g: 0.043137256, b: 0.039215688, a: 1}
+  fogStart: -10
+  fogEnd: 20

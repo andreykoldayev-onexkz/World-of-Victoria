@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "blender-mcp": {
+      "command": "uvx",
+      "args": [
+        "blender-mcp"
+      ],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}

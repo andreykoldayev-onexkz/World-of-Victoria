@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7889c2eec23e1476c9c9757caf6abd60, type: 3}
+  m_Name: VoxelPbrTextureLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::WorldOfVictoria.Rendering.VoxelPbrTextureLibrary
+  stonePbr: {fileID: 2100000, guid: e14cc202ccae04fcabd10264f6cbf2d4, type: 2}
+  grassPbr: {fileID: 2100000, guid: f65ddc1b94cc34c16a2565ea206841ef, type: 2}
+  stoneAlbedo: {fileID: 2800000, guid: c15a44d642fdf4197bf96b94a18840e9, type: 3}
+  stoneNormal: {fileID: 2800000, guid: e9e5884bfe4b84274a48e2a1c9d21b47, type: 3}
+  stoneHeight: {fileID: 2800000, guid: 1d3db0c77d61a4f1c9d9344105b4d8ce, type: 3}
+  stoneAo: {fileID: 2800000, guid: cfbb15dfd983f47e1a9204f455716349, type: 3}
+  stoneRoughness: {fileID: 2800000, guid: 3a0ae7b7b30b444228c49a8c3b1dadb5, type: 3}
+  stoneMetallic: {fileID: 2800000, guid: c4dad19a1217d4445b2f08c3fd3ad6e2, type: 3}
+  grassTopAlbedo: {fileID: 2800000, guid: ae1e82e9f0eff427ab2a76c57d8cff57, type: 3}
+  grassTopNormal: {fileID: 2800000, guid: c1cbaf4c78f8242c1b8f1260a3a4a7ec, type: 3}
+  grassTopHeight: {fileID: 2800000, guid: 13f8dc826cf2a4a0abf9105e53f0e3e4, type: 3}
+  grassTopAo: {fileID: 2800000, guid: 86803368918174b5ea62025598d5e90c, type: 3}
+  grassTopRoughness: {fileID: 2800000, guid: 1455ef4585f96436eaac1c36a326a6f4, type: 3}
+  grassTopMetallic: {fileID: 2800000, guid: 8730f64deee2645259d0092e09b49af0, type: 3}
+  grassSideAlbedo: {fileID: 2800000, guid: 697efe0cdbded4a9fb70c9f3f7722aad, type: 3}
+  grassSideNormal: {fileID: 2800000, guid: 6dd4ff8007f2b4a4699735b8fa8a81dd, type: 3}
+  grassSideHeight: {fileID: 2800000, guid: 8d2ede6395ce143a1b6fe67da6da43c4, type: 3}
+  grassSideAo: {fileID: 2800000, guid: 72b7c88bfe1904267b2aa75229504574, type: 3}
+  grassSideRoughness: {fileID: 2800000, guid: ecbc1f2bfb2aa461580e9d0efae25e84, type: 3}
+  grassSideMetallic: {fileID: 2800000, guid: c709b42d6453b47308cf94ca90fe357f, type: 3}
+  grassBottomAlbedo: {fileID: 2800000, guid: 871aa2b7f625d4466bcdb209436403c7, type: 3}
+  grassBottomNormal: {fileID: 2800000, guid: b7a7f16ce60374c86bd4a91f159fd478, type: 3}
+  grassBottomHeight: {fileID: 2800000, guid: fc046cbcf479542d5a732697a90542b4, type: 3}
+  grassBottomAo: {fileID: 2800000, guid: 9769e72f6437c47f9adc3a7381bd4eb4, type: 3}
+  grassBottomRoughness: {fileID: 2800000, guid: 20454cfdbcdeb49ccbc43417ff7faeb6, type: 3}
+  grassBottomMetallic: {fileID: 2800000, guid: e6fa8ef4216024dd2b3d46c315f511e1, type: 3}
+  albedoArray: {fileID: 18700000, guid: 255728ce9fcbc4d9fa13bcc0924133cf, type: 2}
+  normalArray: {fileID: 18700000, guid: a3d425b439e1944008895eab29880c68, type: 2}
+  roughnessArray: {fileID: 18700000, guid: dd329a80856cc40059b4f245225cbbf8, type: 2}
