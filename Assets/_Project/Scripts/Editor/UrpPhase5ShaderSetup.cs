@@ -116,9 +116,12 @@ public static class UrpPhase5ShaderSetup
         material.SetFloat("_Metallic", 0f);
         material.SetFloat("_VertexLightBlend", 0.42f);
         material.SetFloat("_AoStrength", 0.03f);
-        material.SetFloat("_LightVolumeStrength", 0.22f);
+        material.SetFloat("_LightVolumeStrength", 0f);
         material.SetFloat("_UseVertexBrightness", 1f);
         material.SetFloat("_BrightnessFloor", 0f);
+        material.SetFloat("_BrightnessBlackPoint", 0.055f);
+        material.SetFloat("_BrightnessWhitePoint", 0.98f);
+        material.SetFloat("_BrightnessGamma", 1.28f);
         material.SetFloat("_ShadowBoost", shadowBoost);
         material.SetFloat("_RoughnessBias", 0f);
         EditorUtility.SetDirty(material);

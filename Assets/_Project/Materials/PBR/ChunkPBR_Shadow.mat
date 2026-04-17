@@ -43,8 +43,11 @@ Material:
     m_Floats:
     - _AlbedoContrast: 1.18
     - _AoStrength: 0.03
+    - _BrightnessBlackPoint: 0.055
     - _BrightnessFloor: 0
-    - _LightVolumeStrength: 0.22
+    - _BrightnessGamma: 1.28
+    - _BrightnessWhitePoint: 0.98
+    - _LightVolumeStrength: 0
     - _Metallic: 0
     - _NormalScale: 1
     - _RoughnessBias: 0.02

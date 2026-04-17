@@ -273,39 +273,12 @@ namespace WorldOfVictoria.Core
 
         private void UpdateWorldLightingVolume()
         {
-            if (runtimeWorldData == null || chunkPresentationController?.Settings == null)
+            if (chunkPresentationController?.Settings == null)
             {
                 return;
             }
 
             ReleaseWorldLightingVolume();
-
-            var width = runtimeWorldData.Width;
-            var depth = runtimeWorldData.Depth;
-            var height = runtimeWorldData.Height;
-            var lightData = new Color[width * depth * height];
-
-            for (var z = 0; z < height; z++)
-            {
-                for (var y = 0; y < depth; y++)
-                {
-                    for (var x = 0; x < width; x++)
-                    {
-                        var light = SampleSmoothedSkyLight(x, y, z);
-                        var index = x + (y * width) + (z * width * depth);
-                        lightData[index] = new Color(light, light, light, 1f);
-                    }
-                }
-            }
-
-            runtimeSkyLightVolume = new Texture3D(width, depth, height, TextureFormat.RGBA32, false)
-            {
-                name = "RuntimeSkyLightVolume",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
-            };
-            runtimeSkyLightVolume.SetPixels(lightData);
-            runtimeSkyLightVolume.Apply(false, false);
 
             ApplyWorldLightingToMaterial(chunkPresentationController.Settings.BrightMaterial);
             ApplyWorldLightingToMaterial(chunkPresentationController.Settings.ShadowMaterial);
@@ -313,30 +286,14 @@ namespace WorldOfVictoria.Core
 
         private void ApplyWorldLightingToMaterial(Material material)
         {
-            if (material == null || runtimeSkyLightVolume == null || runtimeWorldData == null)
+            if (material == null || runtimeWorldData == null)
             {
                 return;
             }
 
-            material.SetTexture("_SkyLightVolume", runtimeSkyLightVolume);
-            material.SetFloat("_LightVolumeStrength", 0.22f);
+            material.SetTexture("_SkyLightVolume", null);
+            material.SetFloat("_LightVolumeStrength", 0f);
             material.SetVector("_WorldLightVolumeSize", new Vector4(runtimeWorldData.Width, runtimeWorldData.Depth, runtimeWorldData.Height, 0f));
-        }
-
-        private float SampleSmoothedSkyLight(int x, int y, int z)
-        {
-            var center = runtimeWorldData.GetSkyLightLevel(x, y, z) / 15f;
-            var neighborSum = center * 4f;
-
-            neighborSum += runtimeWorldData.GetSkyLightLevel(x - 1, y, z) / 15f;
-            neighborSum += runtimeWorldData.GetSkyLightLevel(x + 1, y, z) / 15f;
-            neighborSum += runtimeWorldData.GetSkyLightLevel(x, y - 1, z) / 15f;
-            neighborSum += runtimeWorldData.GetSkyLightLevel(x, y + 1, z) / 15f;
-            neighborSum += runtimeWorldData.GetSkyLightLevel(x, y, z - 1) / 15f;
-            neighborSum += runtimeWorldData.GetSkyLightLevel(x, y, z + 1) / 15f;
-
-            var smoothed = neighborSum / 10f;
-            return Mathf.Lerp(center, smoothed, 0.55f);
         }
 
         private void ReleaseWorldLightingVolume()

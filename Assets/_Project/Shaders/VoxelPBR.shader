@@ -15,6 +15,9 @@ Shader "WorldOfVictoria/VoxelPBR"
         _LightVolumeStrength("Light Volume Strength", Range(0,1)) = 1
         _UseVertexBrightness("Use Vertex Brightness", Range(0,1)) = 1
         _BrightnessFloor("Brightness Floor", Range(0,1)) = 0.2
+        _BrightnessBlackPoint("Brightness Black Point", Range(0,0.5)) = 0.06
+        _BrightnessWhitePoint("Brightness White Point", Range(0.5,1)) = 0.98
+        _BrightnessGamma("Brightness Gamma", Range(0.5,3)) = 1.35
         _ShadowBoost("Shadow Boost", Range(0,1)) = 0
         _RoughnessBias("Roughness Bias", Range(-1,1)) = 0
         _WorldLightVolumeSize("World Light Volume Size", Vector) = (256,64,256,0)
@@ -65,6 +68,9 @@ Shader "WorldOfVictoria/VoxelPBR"
                 half _LightVolumeStrength;
                 half _UseVertexBrightness;
                 half _BrightnessFloor;
+                half _BrightnessBlackPoint;
+                half _BrightnessWhitePoint;
+                half _BrightnessGamma;
                 half _ShadowBoost;
                 half _RoughnessBias;
                 float4 _WorldLightVolumeSize;
@@ -147,8 +153,9 @@ Shader "WorldOfVictoria/VoxelPBR"
                     return 0.0h;
                 }
 
-                half remapped = saturate((normalizedLight - 0.02h) / 0.98h);
-                return pow(remapped, 1.35h);
+                half whitePoint = max(_BrightnessWhitePoint, _BrightnessBlackPoint + 0.001h);
+                half remapped = smoothstep(_BrightnessBlackPoint, whitePoint, normalizedLight);
+                return pow(remapped, _BrightnessGamma);
             }
 
             half SampleBilinearQuad(float2 uv, float4 corners)

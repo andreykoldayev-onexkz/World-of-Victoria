@@ -208,8 +208,11 @@ public static class UrpPhase11PolishSetup
         brightMaterial.SetFloat("_UseVertexBrightness", 1f);
         brightMaterial.SetFloat("_VertexLightBlend", 0.42f);
         brightMaterial.SetFloat("_AoStrength", 0.03f);
-        brightMaterial.SetFloat("_LightVolumeStrength", 0.22f);
+        brightMaterial.SetFloat("_LightVolumeStrength", 0f);
         brightMaterial.SetFloat("_BrightnessFloor", 0f);
+        brightMaterial.SetFloat("_BrightnessBlackPoint", 0.055f);
+        brightMaterial.SetFloat("_BrightnessWhitePoint", 0.98f);
+        brightMaterial.SetFloat("_BrightnessGamma", 1.28f);
         brightMaterial.SetFloat("_ShadowBoost", 0.12f);
         brightMaterial.SetFloat("_RoughnessBias", -0.06f);
 
@@ -218,8 +221,11 @@ public static class UrpPhase11PolishSetup
         shadowMaterial.SetFloat("_UseVertexBrightness", 1f);
         shadowMaterial.SetFloat("_VertexLightBlend", 0.42f);
         shadowMaterial.SetFloat("_AoStrength", 0.03f);
-        shadowMaterial.SetFloat("_LightVolumeStrength", 0.22f);
+        shadowMaterial.SetFloat("_LightVolumeStrength", 0f);
         shadowMaterial.SetFloat("_BrightnessFloor", 0f);
+        shadowMaterial.SetFloat("_BrightnessBlackPoint", 0.055f);
+        shadowMaterial.SetFloat("_BrightnessWhitePoint", 0.98f);
+        shadowMaterial.SetFloat("_BrightnessGamma", 1.28f);
         shadowMaterial.SetFloat("_ShadowBoost", 0.12f);
         shadowMaterial.SetFloat("_RoughnessBias", -0.06f);
 
