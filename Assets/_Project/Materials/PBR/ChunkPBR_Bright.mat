@@ -50,6 +50,7 @@ Material:
     - _LightVolumeStrength: 0
     - _Metallic: 0
     - _NormalScale: 1
+    - _ProbeGiStrength: 0.16
     - _RoughnessBias: -0.04
     - _ShadowBoost: 0.12
     - _UseVertexBrightness: 1

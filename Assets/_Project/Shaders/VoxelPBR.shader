@@ -18,6 +18,7 @@ Shader "WorldOfVictoria/VoxelPBR"
         _BrightnessBlackPoint("Brightness Black Point", Range(0,0.5)) = 0.06
         _BrightnessWhitePoint("Brightness White Point", Range(0.5,1)) = 0.98
         _BrightnessGamma("Brightness Gamma", Range(0.5,3)) = 1.35
+        _ProbeGiStrength("Probe GI Strength", Range(0,1)) = 0.18
         _ShadowBoost("Shadow Boost", Range(0,1)) = 0
         _RoughnessBias("Roughness Bias", Range(-1,1)) = 0
         _WorldLightVolumeSize("World Light Volume Size", Vector) = (256,64,256,0)
@@ -71,6 +72,7 @@ Shader "WorldOfVictoria/VoxelPBR"
                 half _BrightnessBlackPoint;
                 half _BrightnessWhitePoint;
                 half _BrightnessGamma;
+                half _ProbeGiStrength;
                 half _ShadowBoost;
                 half _RoughnessBias;
                 float4 _WorldLightVolumeSize;
@@ -122,6 +124,11 @@ Shader "WorldOfVictoria/VoxelPBR"
                     }
 
                     return 2;
+                }
+
+                if (decodedBlock == 2)
+                {
+                    return 3;
                 }
 
                 return 0;
@@ -211,14 +218,16 @@ Shader "WorldOfVictoria/VoxelPBR"
                 half albedoAo = lerp(1.0h, vertexAo, _AoStrength * 0.2h);
                 half lightVisibility = ApplyRenderedBrightnessCurve(brightness);
                 half skyVisibility = saturate(pow(lightVisibility, 0.8h));
+                half probeVisibility = saturate(smoothstep(0.08h, 0.88h, brightness));
                 half3 albedo = saturate(((albedoSample.rgb - 0.5h) * _AlbedoContrast) + 0.5h) * _BaseTint.rgb * albedoAo;
+                half3 probeGi = SampleSH(normalWS) * probeVisibility * _ProbeGiStrength;
 
                 InputData lightingInput = (InputData)0;
                 lightingInput.positionWS = input.positionWS;
                 lightingInput.normalWS = normalWS;
                 lightingInput.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 lightingInput.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
-                lightingInput.bakedGI = half3(0.30h, 0.32h, 0.35h) * lightVisibility;
+                lightingInput.bakedGI = (half3(0.30h, 0.32h, 0.35h) * lightVisibility) + probeGi;
                 lightingInput.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 lightingInput.shadowMask = half4(1, 1, 1, 1);
 

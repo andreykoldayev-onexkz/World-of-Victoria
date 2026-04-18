@@ -67,7 +67,7 @@ namespace WorldOfVictoria.Core
 
         public bool IsTile(int x, int y, int z)
         {
-            return GetBlock(x, y, z) != 0;
+            return GetBlock(x, y, z) != VoxelBlockIds.Air;
         }
 
         public void LoadBlocks(ReadOnlySpan<byte> sourceBlocks)
@@ -82,12 +82,22 @@ namespace WorldOfVictoria.Core
 
         public bool IsSolidBlock(int x, int y, int z)
         {
-            return IsTile(x, y, z);
+            return VoxelBlockLighting.IsSolid(GetBlock(x, y, z));
         }
 
         public bool IsLightBlocker(int x, int y, int z)
         {
-            return IsSolidBlock(x, y, z);
+            return GetDirectionalOpacity(x, y, z, VoxelLightDirection.Down) >= MaxSkyLight;
+        }
+
+        public byte GetDirectionalOpacity(int x, int y, int z, VoxelLightDirection direction)
+        {
+            return VoxelBlockLighting.GetDirectionalOpacity(GetBlock(x, y, z), direction);
+        }
+
+        public bool ReceivesProbeGi(int x, int y, int z)
+        {
+            return VoxelBlockLighting.ReceivesProbeGi(GetBlock(x, y, z));
         }
 
         public float GetBrightness(int x, int y, int z)
@@ -192,29 +202,41 @@ namespace WorldOfVictoria.Core
                 var nextLight = (byte)Mathf.Max(0, currentLight - SkyLightFalloff);
                 var downLight = currentLight == MaxSkyLight ? MaxSkyLight : nextLight;
 
-                TryPropagateLight(x - 1, y, z, nextLight, ref queueTail);
-                TryPropagateLight(x + 1, y, z, nextLight, ref queueTail);
-                TryPropagateLight(x, y - 1, z, downLight, ref queueTail);
-                TryPropagateLight(x, y + 1, z, nextLight, ref queueTail);
-                TryPropagateLight(x, y, z - 1, nextLight, ref queueTail);
-                TryPropagateLight(x, y, z + 1, nextLight, ref queueTail);
+                TryPropagateLight(x - 1, y, z, nextLight, VoxelLightDirection.West, ref queueTail);
+                TryPropagateLight(x + 1, y, z, nextLight, VoxelLightDirection.East, ref queueTail);
+                TryPropagateLight(x, y - 1, z, downLight, VoxelLightDirection.Down, ref queueTail);
+                TryPropagateLight(x, y + 1, z, nextLight, VoxelLightDirection.Up, ref queueTail);
+                TryPropagateLight(x, y, z - 1, nextLight, VoxelLightDirection.North, ref queueTail);
+                TryPropagateLight(x, y, z + 1, nextLight, VoxelLightDirection.South, ref queueTail);
             }
         }
 
-        private void TryPropagateLight(int x, int y, int z, byte lightLevel, ref int queueTail)
+        private void TryPropagateLight(int x, int y, int z, byte lightLevel, VoxelLightDirection direction, ref int queueTail)
         {
-            if (lightLevel == 0 || !InBounds(x, y, z) || IsSolidBlock(x, y, z))
+            if (lightLevel == 0 || !InBounds(x, y, z))
+            {
+                return;
+            }
+
+            var opacity = GetDirectionalOpacity(x, y, z, direction);
+            if (opacity >= MaxSkyLight)
+            {
+                return;
+            }
+
+            var propagatedLight = (byte)Mathf.Max(0, lightLevel - opacity);
+            if (propagatedLight == 0)
             {
                 return;
             }
 
             var index = GetIndexUnchecked(x, y, z);
-            if (skyLight[index] >= lightLevel)
+            if (skyLight[index] >= propagatedLight)
             {
                 return;
             }
 
-            skyLight[index] = lightLevel;
+            skyLight[index] = propagatedLight;
             propagationQueue[queueTail++] = index;
         }
 

@@ -23,12 +23,19 @@ namespace WorldOfVictoria.Core
             public float shadowShadowBoost;
             public float brightRoughnessBias;
             public float shadowRoughnessBias;
+            public float brightProbeGiStrength;
+            public float shadowProbeGiStrength;
+            public float volumetricDensityMultiplier;
+            public float volumetricDistanceMultiplier;
+            public int volumetricStepCount;
+            public float volumetricShaftMultiplier;
         }
 
         [SerializeField] private Volume globalVolume;
         [SerializeField] private Material brightChunkMaterial;
         [SerializeField] private Material shadowChunkMaterial;
         [SerializeField] private AtmosphereParticleController atmosphereParticles;
+        [SerializeField] private VolumetricLightingController volumetricLighting;
         [SerializeField] private WorldConfig worldConfig;
         [SerializeField] private QualityVisualProfile[] profiles =
         {
@@ -46,7 +53,13 @@ namespace WorldOfVictoria.Core
                 brightShadowBoost = 0.14f,
                 shadowShadowBoost = 0.18f,
                 brightRoughnessBias = -0.06f,
-                shadowRoughnessBias = 0.01f
+                shadowRoughnessBias = 0.01f,
+                brightProbeGiStrength = 0.18f,
+                shadowProbeGiStrength = 0.16f,
+                volumetricDensityMultiplier = 1.0f,
+                volumetricDistanceMultiplier = 1.0f,
+                volumetricStepCount = 20,
+                volumetricShaftMultiplier = 1.0f
             },
             new QualityVisualProfile
             {
@@ -62,7 +75,13 @@ namespace WorldOfVictoria.Core
                 brightShadowBoost = 0.12f,
                 shadowShadowBoost = 0.16f,
                 brightRoughnessBias = -0.04f,
-                shadowRoughnessBias = 0.02f
+                shadowRoughnessBias = 0.02f,
+                brightProbeGiStrength = 0.16f,
+                shadowProbeGiStrength = 0.14f,
+                volumetricDensityMultiplier = 0.92f,
+                volumetricDistanceMultiplier = 0.9f,
+                volumetricStepCount = 18,
+                volumetricShaftMultiplier = 0.95f
             },
             new QualityVisualProfile
             {
@@ -78,7 +97,13 @@ namespace WorldOfVictoria.Core
                 brightShadowBoost = 0.08f,
                 shadowShadowBoost = 0.14f,
                 brightRoughnessBias = -0.02f,
-                shadowRoughnessBias = 0.03f
+                shadowRoughnessBias = 0.03f,
+                brightProbeGiStrength = 0.12f,
+                shadowProbeGiStrength = 0.10f,
+                volumetricDensityMultiplier = 0.74f,
+                volumetricDistanceMultiplier = 0.72f,
+                volumetricStepCount = 14,
+                volumetricShaftMultiplier = 0.78f
             },
             new QualityVisualProfile
             {
@@ -94,16 +119,23 @@ namespace WorldOfVictoria.Core
                 brightShadowBoost = 0.03f,
                 shadowShadowBoost = 0.05f,
                 brightRoughnessBias = 0f,
-                shadowRoughnessBias = 0.02f
+                shadowRoughnessBias = 0.02f,
+                brightProbeGiStrength = 0.08f,
+                shadowProbeGiStrength = 0.06f,
+                volumetricDensityMultiplier = 0.45f,
+                volumetricDistanceMultiplier = 0.55f,
+                volumetricStepCount = 10,
+                volumetricShaftMultiplier = 0.45f
             }
         };
 
-        public void Configure(Volume volume, Material brightMaterial, Material shadowMaterial, AtmosphereParticleController particleController, WorldConfig config)
+        public void Configure(Volume volume, Material brightMaterial, Material shadowMaterial, AtmosphereParticleController particleController, VolumetricLightingController volumetricController, WorldConfig config)
         {
             globalVolume = volume;
             brightChunkMaterial = brightMaterial;
             shadowChunkMaterial = shadowMaterial;
             atmosphereParticles = particleController;
+            volumetricLighting = volumetricController;
             worldConfig = config;
         }
 
@@ -125,7 +157,13 @@ namespace WorldOfVictoria.Core
                     brightShadowBoost = 0.14f,
                     shadowShadowBoost = 0.18f,
                     brightRoughnessBias = -0.06f,
-                    shadowRoughnessBias = 0.01f
+                    shadowRoughnessBias = 0.01f,
+                    brightProbeGiStrength = 0.18f,
+                    shadowProbeGiStrength = 0.16f,
+                    volumetricDensityMultiplier = 1.0f,
+                    volumetricDistanceMultiplier = 1.0f,
+                    volumetricStepCount = 20,
+                    volumetricShaftMultiplier = 1.0f
                 },
                 new QualityVisualProfile
                 {
@@ -141,7 +179,13 @@ namespace WorldOfVictoria.Core
                     brightShadowBoost = 0.12f,
                     shadowShadowBoost = 0.16f,
                     brightRoughnessBias = -0.04f,
-                    shadowRoughnessBias = 0.02f
+                    shadowRoughnessBias = 0.02f,
+                    brightProbeGiStrength = 0.16f,
+                    shadowProbeGiStrength = 0.14f,
+                    volumetricDensityMultiplier = 0.92f,
+                    volumetricDistanceMultiplier = 0.9f,
+                    volumetricStepCount = 18,
+                    volumetricShaftMultiplier = 0.95f
                 },
                 new QualityVisualProfile
                 {
@@ -157,7 +201,13 @@ namespace WorldOfVictoria.Core
                     brightShadowBoost = 0.08f,
                     shadowShadowBoost = 0.14f,
                     brightRoughnessBias = -0.02f,
-                    shadowRoughnessBias = 0.03f
+                    shadowRoughnessBias = 0.03f,
+                    brightProbeGiStrength = 0.12f,
+                    shadowProbeGiStrength = 0.10f,
+                    volumetricDensityMultiplier = 0.74f,
+                    volumetricDistanceMultiplier = 0.72f,
+                    volumetricStepCount = 14,
+                    volumetricShaftMultiplier = 0.78f
                 },
                 new QualityVisualProfile
                 {
@@ -173,7 +223,13 @@ namespace WorldOfVictoria.Core
                     brightShadowBoost = 0.03f,
                     shadowShadowBoost = 0.05f,
                     brightRoughnessBias = 0f,
-                    shadowRoughnessBias = 0.02f
+                    shadowRoughnessBias = 0.02f,
+                    brightProbeGiStrength = 0.08f,
+                    shadowProbeGiStrength = 0.06f,
+                    volumetricDensityMultiplier = 0.45f,
+                    volumetricDistanceMultiplier = 0.55f,
+                    volumetricStepCount = 10,
+                    volumetricShaftMultiplier = 0.45f
                 }
             };
         }
@@ -227,6 +283,7 @@ namespace WorldOfVictoria.Core
                 brightChunkMaterial.SetFloat("_UseVertexBrightness", profile.brightVertexLighting);
                 brightChunkMaterial.SetFloat("_ShadowBoost", profile.brightShadowBoost);
                 brightChunkMaterial.SetFloat("_RoughnessBias", profile.brightRoughnessBias);
+                brightChunkMaterial.SetFloat("_ProbeGiStrength", profile.brightProbeGiStrength);
             }
 
             if (shadowChunkMaterial != null)
@@ -234,6 +291,7 @@ namespace WorldOfVictoria.Core
                 shadowChunkMaterial.SetFloat("_UseVertexBrightness", profile.shadowVertexLighting);
                 shadowChunkMaterial.SetFloat("_ShadowBoost", profile.shadowShadowBoost);
                 shadowChunkMaterial.SetFloat("_RoughnessBias", profile.shadowRoughnessBias);
+                shadowChunkMaterial.SetFloat("_ProbeGiStrength", profile.shadowProbeGiStrength);
             }
         }
 
@@ -248,6 +306,11 @@ namespace WorldOfVictoria.Core
             RenderSettings.fogMode = FogMode.Exponential;
             RenderSettings.fogColor = worldConfig.FogColor;
             RenderSettings.fogDensity = worldConfig.FogDensity * profile.fogDensityMultiplier;
+            volumetricLighting?.ApplyQualityProfile(
+                profile.volumetricDensityMultiplier,
+                profile.volumetricDistanceMultiplier,
+                profile.volumetricStepCount,
+                profile.volumetricShaftMultiplier);
         }
 
         private QualityVisualProfile ResolveProfile(string qualityName)

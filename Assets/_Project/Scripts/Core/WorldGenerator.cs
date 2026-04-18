@@ -19,7 +19,7 @@ namespace WorldOfVictoria.Core
             }
 
             var random = new Random(seed);
-            worldData.Fill(1);
+            worldData.Fill(VoxelBlockIds.Stone);
 
             for (var caveIndex = 0; caveIndex < worldConfig.CaveIterations; caveIndex++)
             {
@@ -56,12 +56,55 @@ namespace WorldOfVictoria.Core
                             continue;
                         }
 
-                        worldData.SetBlock(tileX, tileY, tileZ, 0);
+                        worldData.SetBlock(tileX, tileY, tileZ, VoxelBlockIds.Air);
                     }
                 }
             }
 
+            ApplySurfacePalette(worldData);
             worldData.CalculateLightDepths();
+        }
+
+        public static void ApplySurfacePalette(WorldData worldData)
+        {
+            for (var x = 0; x < worldData.Width; x++)
+            {
+                for (var z = 0; z < worldData.Height; z++)
+                {
+                    var surfaceY = -1;
+                    for (var y = worldData.Depth - 1; y >= 0; y--)
+                    {
+                        if (!worldData.IsSolidBlock(x, y, z))
+                        {
+                            continue;
+                        }
+
+                        surfaceY = y;
+                        break;
+                    }
+
+                    if (surfaceY < 0)
+                    {
+                        continue;
+                    }
+
+                    if (surfaceY + 1 < worldData.Depth && !worldData.IsSolidBlock(x, surfaceY + 1, z))
+                    {
+                        worldData.SetBlock(x, surfaceY, z, VoxelBlockIds.Grass);
+                    }
+
+                    for (var dirtDepth = 1; dirtDepth <= 3; dirtDepth++)
+                    {
+                        var dirtY = surfaceY - dirtDepth;
+                        if (dirtY < 0 || !worldData.IsSolidBlock(x, dirtY, z))
+                        {
+                            continue;
+                        }
+
+                        worldData.SetBlock(x, dirtY, z, VoxelBlockIds.Dirt);
+                    }
+                }
+            }
         }
     }
 }
