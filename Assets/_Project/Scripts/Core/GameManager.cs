@@ -232,7 +232,6 @@ namespace WorldOfVictoria.Core
         {
             runtimeWorldData = new WorldData(saveData.Width, saveData.Height, saveData.Depth);
             runtimeWorldData.LoadBlocks(saveData.Blocks);
-            WorldGenerator.ApplySurfacePalette(runtimeWorldData);
             runtimeWorldData.CalculateLightDepths();
             runtimeChunkManager = new ChunkManager(runtimeWorldData, worldConfig.ChunkSize);
             lastGeneratedSeed = saveData.GenerationSeed;

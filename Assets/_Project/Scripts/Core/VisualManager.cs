@@ -9,7 +9,6 @@ namespace WorldOfVictoria.Core
         [SerializeField] private Volume globalVolume;
         [SerializeField] private ParticleSystem dustMotes;
         [SerializeField] private AtmosphereParticleController atmosphereParticles;
-        [SerializeField] private VolumetricLightingController volumetricLighting;
         [SerializeField] private VisualScalabilityController scalabilityController;
         [SerializeField] private string defaultQualityTier = "High";
         [SerializeField] private bool applyQualityOnAwake = true;
@@ -18,7 +17,6 @@ namespace WorldOfVictoria.Core
         public Volume GlobalVolume => globalVolume;
         public ParticleSystem DustMotes => dustMotes;
         public AtmosphereParticleController AtmosphereParticles => atmosphereParticles;
-        public VolumetricLightingController VolumetricLighting => volumetricLighting;
         public VisualScalabilityController ScalabilityController => scalabilityController;
         public string DefaultQualityTier => defaultQualityTier;
 
@@ -71,11 +69,6 @@ namespace WorldOfVictoria.Core
         public void ConfigureAtmosphereParticles(AtmosphereParticleController controller)
         {
             atmosphereParticles = controller;
-        }
-
-        public void ConfigureVolumetricLighting(VolumetricLightingController controller)
-        {
-            volumetricLighting = controller;
         }
 
         public void ConfigureScalabilityController(VisualScalabilityController controller)
