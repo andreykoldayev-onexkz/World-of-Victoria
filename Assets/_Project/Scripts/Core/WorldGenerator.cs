@@ -62,6 +62,60 @@ namespace WorldOfVictoria.Core
             }
 
             worldData.CalculateLightDepths();
+            ApplySurfacePalette(worldData);
+            worldData.CalculateLightDepths();
+        }
+
+        public static void ApplySurfacePalette(WorldData worldData)
+        {
+            for (var x = 0; x < worldData.Width; x++)
+            {
+                for (var z = 0; z < worldData.Height; z++)
+                {
+                    var surfaceY = -1;
+                    for (var y = worldData.Depth - 1; y >= 0; y--)
+                    {
+                        if (!worldData.IsSolidBlock(x, y, z))
+                        {
+                            continue;
+                        }
+
+                        surfaceY = y;
+                        break;
+                    }
+
+                    if (surfaceY < 0)
+                    {
+                        continue;
+                    }
+
+                    var topExposed = surfaceY + 1 >= worldData.Depth || !worldData.IsSolidBlock(x, surfaceY + 1, z);
+                    var isColumnSurface = surfaceY == worldData.GetLightDepth(x, z);
+                    var hasMaximumSkyLight = worldData.GetSkyLightLevel(x, surfaceY + 1, z) == 15;
+
+                    if (topExposed)
+                    {
+                        worldData.SetBlock(
+                            x,
+                            surfaceY,
+                            z,
+                            isColumnSurface && hasMaximumSkyLight
+                                ? VoxelBlockIds.Grass
+                                : VoxelBlockIds.Dirt);
+                    }
+
+                    for (var dirtDepth = 1; dirtDepth <= 3; dirtDepth++)
+                    {
+                        var dirtY = surfaceY - dirtDepth;
+                        if (dirtY < 0 || !worldData.IsSolidBlock(x, dirtY, z))
+                        {
+                            continue;
+                        }
+
+                        worldData.SetBlock(x, dirtY, z, VoxelBlockIds.Dirt);
+                    }
+                }
+            }
         }
     }
 }
