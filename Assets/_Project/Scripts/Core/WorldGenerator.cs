@@ -61,6 +61,7 @@ namespace WorldOfVictoria.Core
                 }
             }
 
+            worldData.CalculateLightDepths();
             ApplySurfacePalette(worldData);
             worldData.CalculateLightDepths();
         }
@@ -88,9 +89,19 @@ namespace WorldOfVictoria.Core
                         continue;
                     }
 
-                    if (surfaceY + 1 < worldData.Depth && !worldData.IsSolidBlock(x, surfaceY + 1, z))
+                    var topExposed = surfaceY + 1 >= worldData.Depth || !worldData.IsSolidBlock(x, surfaceY + 1, z);
+                    var isColumnSurface = surfaceY == worldData.GetLightDepth(x, z);
+                    var hasMaximumSkyLight = worldData.GetSkyLightLevel(x, surfaceY + 1, z) == 15;
+
+                    if (topExposed)
                     {
-                        worldData.SetBlock(x, surfaceY, z, VoxelBlockIds.Grass);
+                        worldData.SetBlock(
+                            x,
+                            surfaceY,
+                            z,
+                            isColumnSurface && hasMaximumSkyLight
+                                ? VoxelBlockIds.Grass
+                                : VoxelBlockIds.Dirt);
                     }
 
                     for (var dirtDepth = 1; dirtDepth <= 3; dirtDepth++)
