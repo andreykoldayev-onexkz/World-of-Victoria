@@ -213,7 +213,6 @@ public static class UrpPhase11PolishSetup
         brightMaterial.SetFloat("_BrightnessBlackPoint", 0.055f);
         brightMaterial.SetFloat("_BrightnessWhitePoint", 0.98f);
         brightMaterial.SetFloat("_BrightnessGamma", 1.28f);
-        brightMaterial.SetFloat("_ProbeGiStrength", 0.16f);
         brightMaterial.SetFloat("_ShadowBoost", 0.12f);
         brightMaterial.SetFloat("_RoughnessBias", -0.06f);
 
@@ -227,7 +226,6 @@ public static class UrpPhase11PolishSetup
         shadowMaterial.SetFloat("_BrightnessBlackPoint", 0.055f);
         shadowMaterial.SetFloat("_BrightnessWhitePoint", 0.98f);
         shadowMaterial.SetFloat("_BrightnessGamma", 1.28f);
-        shadowMaterial.SetFloat("_ProbeGiStrength", 0.14f);
         shadowMaterial.SetFloat("_ShadowBoost", 0.12f);
         shadowMaterial.SetFloat("_RoughnessBias", -0.06f);
 

@@ -1,8 +1,5 @@
 using UnityEngine;
 using WorldOfVictoria.Core;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace WorldOfVictoria.Chunking
 {
@@ -78,16 +75,6 @@ namespace WorldOfVictoria.Chunking
                         var chunkView = Object.Instantiate(ChunkPrefab, gameManager.WorldRoot);
                         chunkView.Initialize(chunkData, BrightMaterial, ShadowMaterial);
                         chunkView.ApplyMesh(chunkMesh);
-#if UNITY_EDITOR
-                        if (!Application.isPlaying)
-                        {
-                            GameObjectUtility.SetStaticEditorFlags(
-                                chunkView.gameObject,
-                                StaticEditorFlags.ContributeGI |
-                                StaticEditorFlags.OccluderStatic |
-                                StaticEditorFlags.ReflectionProbeStatic);
-                        }
-#endif
                     }
                 }
             }

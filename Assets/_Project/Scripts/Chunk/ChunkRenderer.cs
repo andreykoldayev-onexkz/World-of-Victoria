@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace WorldOfVictoria.Chunking
 {
@@ -25,9 +24,6 @@ namespace WorldOfVictoria.Chunking
 
             transform.localPosition = Vector3.zero;
             meshRenderer.sharedMaterial = brightMaterial != null ? brightMaterial : shadowMaterial;
-            meshRenderer.lightProbeUsage = LightProbeUsage.BlendProbes;
-            meshRenderer.reflectionProbeUsage = ReflectionProbeUsage.BlendProbes;
-            meshRenderer.receiveShadows = true;
             gameObject.SetActive(true);
         }
 

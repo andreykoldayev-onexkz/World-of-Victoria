@@ -38,7 +38,6 @@ public static class UrpPhase10ScalabilitySetup
             presentationController.Settings.BrightMaterial,
             presentationController.Settings.ShadowMaterial,
             atmosphereController,
-            visualManager.VolumetricLighting,
             gameManager.WorldConfig);
 
         visualManager.ConfigureScalabilityController(scalabilityController);

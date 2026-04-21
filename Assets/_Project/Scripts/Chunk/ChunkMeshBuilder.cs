@@ -136,18 +136,15 @@ namespace WorldOfVictoria.Chunking
 
         private static byte ResolveBlockType(WorldData worldData, int x, int y, int z)
         {
-            var worldBlock = worldData.GetBlock(x, y, z);
-            return worldBlock switch
-            {
-                VoxelBlockIds.Grass => 1,
-                VoxelBlockIds.Dirt => 2,
-                _ => 0
-            };
+            var topExposed = !worldData.IsSolidBlock(x, y + 1, z);
+            var nearSurface = y >= worldData.Depth - 8;
+            var skylit = worldData.GetSkyLightLevel(x, y + 1, z) >= 13;
+            return (byte)(topExposed && nearSurface && skylit ? 1 : 0);
         }
 
         private static int ResolveTileId(byte blockType)
         {
-            return blockType;
+            return blockType == 1 ? 0 : 1;
         }
 
         private static void AppendVisibleFaces(ChunkMeshData meshData, WorldData worldData, int x, int y, int z, byte blockType, int tileId)

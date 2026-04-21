@@ -19,7 +19,7 @@ namespace WorldOfVictoria.Core
             }
 
             var random = new Random(seed);
-            worldData.Fill(VoxelBlockIds.Stone);
+            worldData.Fill(1);
 
             for (var caveIndex = 0; caveIndex < worldConfig.CaveIterations; caveIndex++)
             {
@@ -56,7 +56,7 @@ namespace WorldOfVictoria.Core
                             continue;
                         }
 
-                        worldData.SetBlock(tileX, tileY, tileZ, VoxelBlockIds.Air);
+                        worldData.SetBlock(tileX, tileY, tileZ, 0);
                     }
                 }
             }

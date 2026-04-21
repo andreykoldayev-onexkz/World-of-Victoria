@@ -122,7 +122,6 @@ public static class UrpPhase5ShaderSetup
         material.SetFloat("_BrightnessBlackPoint", 0.055f);
         material.SetFloat("_BrightnessWhitePoint", 0.98f);
         material.SetFloat("_BrightnessGamma", 1.28f);
-        material.SetFloat("_ProbeGiStrength", shadowBoost > 0.01f ? 0.14f : 0.16f);
         material.SetFloat("_ShadowBoost", shadowBoost);
         material.SetFloat("_RoughnessBias", 0f);
         EditorUtility.SetDirty(material);
