@@ -14,6 +14,7 @@ namespace WorldOfVictoria.Player
         [SerializeField] private GameManager gameManager;
         [SerializeField] private MouseLook mouseLook;
         [SerializeField] private ChunkRuntimeController chunkRuntimeController;
+        [SerializeField] private BlockInteractionController blockInteractionController;
 
         [Header("Input Actions")]
         [SerializeField] private string playerActionMapName = "Player";
@@ -137,6 +138,16 @@ namespace WorldOfVictoria.Player
             if (chunkRuntimeController == null && gameManager != null)
             {
                 chunkRuntimeController = gameManager.GetComponent<ChunkRuntimeController>();
+            }
+
+            if (blockInteractionController == null)
+            {
+                blockInteractionController = GetComponent<BlockInteractionController>();
+            }
+
+            if (blockInteractionController == null)
+            {
+                blockInteractionController = gameObject.AddComponent<BlockInteractionController>();
             }
         }
 

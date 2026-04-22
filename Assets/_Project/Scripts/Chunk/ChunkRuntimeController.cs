@@ -4,7 +4,7 @@ using WorldOfVictoria.Core;
 
 namespace WorldOfVictoria.Chunking
 {
-    public sealed class ChunkRuntimeController : MonoBehaviour
+    public sealed class ChunkRuntimeController : MonoBehaviour, ILevelListener
     {
         [SerializeField] private GameManager gameManager;
         [SerializeField] private ChunkPresentationController presentationController;
@@ -52,6 +52,11 @@ namespace WorldOfVictoria.Chunking
 
         public void ForceReinitialize()
         {
+            if (observedChunkManager?.WorldData != null)
+            {
+                observedChunkManager.WorldData.RemoveListener(this);
+            }
+
             observedChunkManager = null;
             rebuildQueue.Clear();
             queuedChunkIndices.Clear();
@@ -69,6 +74,7 @@ namespace WorldOfVictoria.Chunking
 
             ForceReinitialize();
             observedChunkManager = gameManager.RuntimeChunkManager;
+            observedChunkManager?.WorldData?.AddListener(this);
             WarmPool();
 
             foreach (var chunk in observedChunkManager.GetAllChunks())
@@ -186,6 +192,30 @@ namespace WorldOfVictoria.Chunking
             RefreshVisibleChunkSet();
         }
 
+        public void OnTileChanged(int x, int y, int z)
+        {
+            MarkChunkAndNeighborsDirty(x, y, z);
+        }
+
+        public void OnLightColumnChanged(int x, int z, int oldDepth, int newDepth)
+        {
+            MarkColumnNeighborhoodDirty(x, z, 1);
+        }
+
+        public void OnAllChanged()
+        {
+            if (observedChunkManager == null)
+            {
+                return;
+            }
+
+            foreach (var chunk in observedChunkManager.GetAllChunks())
+            {
+                chunk.MarkDirty();
+                EnqueueDirtyChunk(chunk);
+            }
+        }
+
         private void EnqueueDirtyChunk(ChunkData chunk)
         {
             if (!chunk.IsDirty || queuedChunkIndices.Contains(chunk.Index))
@@ -207,6 +237,78 @@ namespace WorldOfVictoria.Chunking
             }
 
             return Instantiate(presentationController.ChunkPrefab, gameManager.WorldRoot);
+        }
+
+        private void MarkChunkAndNeighborsDirty(int x, int y, int z)
+        {
+            if (observedChunkManager == null)
+            {
+                return;
+            }
+
+            MarkChunkDirtyAtBlock(x, y, z);
+
+            var localX = Mod(x, observedChunkManager.ChunkSize);
+            var localY = Mod(y, observedChunkManager.ChunkSize);
+            var localZ = Mod(z, observedChunkManager.ChunkSize);
+
+            if (localX == 0) MarkChunkDirtyAtBlock(x - 1, y, z);
+            if (localX == observedChunkManager.ChunkSize - 1) MarkChunkDirtyAtBlock(x + 1, y, z);
+            if (localY == 0) MarkChunkDirtyAtBlock(x, y - 1, z);
+            if (localY == observedChunkManager.ChunkSize - 1) MarkChunkDirtyAtBlock(x, y + 1, z);
+            if (localZ == 0) MarkChunkDirtyAtBlock(x, y, z - 1);
+            if (localZ == observedChunkManager.ChunkSize - 1) MarkChunkDirtyAtBlock(x, y, z + 1);
+        }
+
+        private void MarkColumnNeighborhoodDirty(int x, int z, int padding)
+        {
+            if (observedChunkManager == null)
+            {
+                return;
+            }
+
+            for (var sampleX = x - padding; sampleX <= x + padding; sampleX++)
+            {
+                for (var sampleZ = z - padding; sampleZ <= z + padding; sampleZ++)
+                {
+                    if (sampleX < 0 || sampleX >= observedChunkManager.WorldData.Width
+                        || sampleZ < 0 || sampleZ >= observedChunkManager.WorldData.Height)
+                    {
+                        continue;
+                    }
+
+                    for (var y = 0; y < observedChunkManager.WorldData.Depth; y += observedChunkManager.ChunkSize)
+                    {
+                        MarkChunkDirtyAtBlock(sampleX, y, sampleZ);
+                    }
+                }
+            }
+        }
+
+        private void MarkChunkDirtyAtBlock(int x, int y, int z)
+        {
+            if (observedChunkManager == null)
+            {
+                return;
+            }
+
+            var chunk = observedChunkManager.GetChunkContainingBlock(
+                Mathf.Clamp(x, 0, observedChunkManager.WorldData.Width - 1),
+                Mathf.Clamp(y, 0, observedChunkManager.WorldData.Depth - 1),
+                Mathf.Clamp(z, 0, observedChunkManager.WorldData.Height - 1));
+
+            if (chunk == null)
+            {
+                return;
+            }
+
+            chunk.MarkDirty();
+            EnqueueDirtyChunk(chunk);
+        }
+
+        private static int Mod(int value, int modulus)
+        {
+            return (value % modulus + modulus) % modulus;
         }
 
         private void ReclaimAllActiveRenderers()

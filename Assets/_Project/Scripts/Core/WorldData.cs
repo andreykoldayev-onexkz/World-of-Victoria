@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace WorldOfVictoria.Core
@@ -13,6 +14,7 @@ namespace WorldOfVictoria.Core
         private readonly int[] lightDepths;
         private readonly byte[] skyLight;
         private readonly int[] propagationQueue;
+        private readonly List<ILevelListener> listeners = new();
 
         public WorldData(int width, int height, int depth)
         {
@@ -62,7 +64,20 @@ namespace WorldOfVictoria.Core
                 return;
             }
 
-            blocks[GetIndexUnchecked(x, y, z)] = blockType;
+            var index = GetIndexUnchecked(x, y, z);
+            var oldBlock = blocks[index];
+            if (oldBlock == blockType)
+            {
+                return;
+            }
+
+            blocks[index] = blockType;
+            NotifyTileChanged(x, y, z);
+
+            if (NeedsLightingUpdate(oldBlock, blockType))
+            {
+                RecalculateLightColumn(x, z);
+            }
         }
 
         public bool IsTile(int x, int y, int z)
@@ -126,6 +141,34 @@ namespace WorldOfVictoria.Core
             Array.Fill(blocks, blockType);
         }
 
+        public void AddListener(ILevelListener listener)
+        {
+            if (listener == null || listeners.Contains(listener))
+            {
+                return;
+            }
+
+            listeners.Add(listener);
+        }
+
+        public void RemoveListener(ILevelListener listener)
+        {
+            if (listener == null)
+            {
+                return;
+            }
+
+            listeners.Remove(listener);
+        }
+
+        public void NotifyAllChanged()
+        {
+            for (var i = 0; i < listeners.Count; i++)
+            {
+                listeners[i].OnAllChanged();
+            }
+        }
+
         public void CalculateLightDepths()
         {
             CalculateLightDepths(0, 0, Width, Height);
@@ -161,6 +204,53 @@ namespace WorldOfVictoria.Core
             }
 
             return lightDepths[x + z * Width];
+        }
+
+        private bool NeedsLightingUpdate(byte oldBlock, byte newBlock)
+        {
+            if (oldBlock == newBlock)
+            {
+                return false;
+            }
+
+            if (VoxelBlockLighting.IsSolid(oldBlock) != VoxelBlockLighting.IsSolid(newBlock))
+            {
+                return true;
+            }
+
+            for (var i = 0; i < 6; i++)
+            {
+                var direction = (VoxelLightDirection)i;
+                if (VoxelBlockLighting.GetDirectionalOpacity(oldBlock, direction) != VoxelBlockLighting.GetDirectionalOpacity(newBlock, direction))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void RecalculateLightColumn(int x, int z)
+        {
+            if (x < 0 || x >= Width || z < 0 || z >= Height)
+            {
+                return;
+            }
+
+            var oldDepth = lightDepths[x + z * Width];
+            var newDepth = Depth - 1;
+            while (newDepth >= 0 && !IsLightBlocker(x, newDepth, z))
+            {
+                newDepth--;
+            }
+
+            lightDepths[x + z * Width] = newDepth;
+            RebuildSkyLight();
+
+            if (oldDepth != newDepth)
+            {
+                NotifyLightColumnChanged(x, z, oldDepth, newDepth);
+            }
         }
 
         private void RebuildSkyLight()
@@ -246,6 +336,22 @@ namespace WorldOfVictoria.Core
             var yz = index / Width;
             y = yz / Height;
             z = yz % Height;
+        }
+
+        private void NotifyTileChanged(int x, int y, int z)
+        {
+            for (var i = 0; i < listeners.Count; i++)
+            {
+                listeners[i].OnTileChanged(x, y, z);
+            }
+        }
+
+        private void NotifyLightColumnChanged(int x, int z, int oldDepth, int newDepth)
+        {
+            for (var i = 0; i < listeners.Count; i++)
+            {
+                listeners[i].OnLightColumnChanged(x, z, oldDepth, newDepth);
+            }
         }
     }
 }
