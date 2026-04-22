@@ -101,9 +101,11 @@ namespace WorldOfVictoria.Core
                             x,
                             surfaceY,
                             z,
-                            isColumnSurface && hasMaximumSkyLight && isWithinGrassBand
-                                ? VoxelBlockIds.Grass
-                                : VoxelBlockIds.Dirt);
+                            isWithinGrassBand
+                                ? (isColumnSurface && hasMaximumSkyLight
+                                    ? VoxelBlockIds.Grass
+                                    : VoxelBlockIds.Dirt)
+                                : VoxelBlockIds.Stone);
                     }
 
                     for (var dirtDepth = 1; dirtDepth <= 3; dirtDepth++)
@@ -114,7 +116,14 @@ namespace WorldOfVictoria.Core
                             continue;
                         }
 
-                        worldData.SetBlock(x, dirtY, z, VoxelBlockIds.Dirt);
+                        if (dirtY >= worldData.Depth - GrassSurfaceBandDepth)
+                        {
+                            worldData.SetBlock(x, dirtY, z, VoxelBlockIds.Dirt);
+                        }
+                        else
+                        {
+                            worldData.SetBlock(x, dirtY, z, VoxelBlockIds.Stone);
+                        }
                     }
                 }
             }
