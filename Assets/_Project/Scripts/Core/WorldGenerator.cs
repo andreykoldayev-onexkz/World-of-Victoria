@@ -5,6 +5,7 @@ namespace WorldOfVictoria.Core
     public sealed class WorldGenerator
     {
         private const int SphereIterationsPerRadius = 1000;
+        private const int GrassSurfaceBandDepth = 7;
 
         public void Generate(WorldData worldData, WorldConfig worldConfig, int seed)
         {
@@ -92,6 +93,7 @@ namespace WorldOfVictoria.Core
                     var topExposed = surfaceY + 1 >= worldData.Depth || !worldData.IsSolidBlock(x, surfaceY + 1, z);
                     var isColumnSurface = surfaceY == worldData.GetLightDepth(x, z);
                     var hasMaximumSkyLight = worldData.GetSkyLightLevel(x, surfaceY + 1, z) == 15;
+                    var isWithinGrassBand = surfaceY >= worldData.Depth - GrassSurfaceBandDepth;
 
                     if (topExposed)
                     {
@@ -99,7 +101,7 @@ namespace WorldOfVictoria.Core
                             x,
                             surfaceY,
                             z,
-                            isColumnSurface && hasMaximumSkyLight
+                            isColumnSurface && hasMaximumSkyLight && isWithinGrassBand
                                 ? VoxelBlockIds.Grass
                                 : VoxelBlockIds.Dirt);
                     }

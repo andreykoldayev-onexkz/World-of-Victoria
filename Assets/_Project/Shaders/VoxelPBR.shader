@@ -6,21 +6,21 @@ Shader "WorldOfVictoria/VoxelPBR"
         _NormalArray("Normal Array", 2DArray) = "" {}
         _RoughnessArray("Roughness Array", 2DArray) = "" {}
         _SkyLightVolume("Sky Light Volume", 3D) = "" {}
-        _BaseTint("Base Tint", Color) = (1,1,1,1)
+        _BaseTint("Base Tint", Color) = (1.06,1.05,1,1)
         _NormalScale("Normal Scale", Range(0,2)) = 1
-        _Metallic("Metallic", Range(0,1)) = 0
-        _AlbedoContrast("Albedo Contrast", Range(0.5,2)) = 1
-        _VertexLightBlend("Vertex Light Blend", Range(0,1)) = 0.08
-        _AoStrength("AO Strength", Range(0,1)) = 0.35
-        _LightVolumeStrength("Light Volume Strength", Range(0,1)) = 1
+        _Metallic("Metallic", Range(0,1)) = 0.03
+        _AlbedoContrast("Albedo Contrast", Range(0.5,2)) = 1.22
+        _VertexLightBlend("Vertex Light Blend", Range(0,1)) = 1
+        _AoStrength("AO Strength", Range(0,1)) = 0.08
+        _LightVolumeStrength("Light Volume Strength", Range(0,1)) = 0
         _UseVertexBrightness("Use Vertex Brightness", Range(0,1)) = 1
-        _BrightnessFloor("Brightness Floor", Range(0,1)) = 0.2
-        _BrightnessBlackPoint("Brightness Black Point", Range(0,0.5)) = 0.06
-        _BrightnessWhitePoint("Brightness White Point", Range(0.5,1)) = 0.98
-        _BrightnessGamma("Brightness Gamma", Range(0.5,3)) = 1.35
-        _ProbeGiStrength("Probe GI Strength", Range(0,1)) = 0.18
-        _ShadowBoost("Shadow Boost", Range(0,1)) = 0
-        _RoughnessBias("Roughness Bias", Range(-1,1)) = 0
+        _BrightnessFloor("Brightness Floor", Range(0,1)) = 0
+        _BrightnessBlackPoint("Brightness Black Point", Range(0,0.5)) = 0.05
+        _BrightnessWhitePoint("Brightness White Point", Range(0.5,1)) = 0.97
+        _BrightnessGamma("Brightness Gamma", Range(0.5,3)) = 1.24
+        _ProbeGiStrength("Probe GI Strength", Range(0,1)) = 0.14
+        _ShadowBoost("Shadow Boost", Range(0,1)) = 0.1
+        _RoughnessBias("Roughness Bias", Range(-1,1)) = -0.04
         _WorldLightVolumeSize("World Light Volume Size", Vector) = (256,64,256,0)
     }
 

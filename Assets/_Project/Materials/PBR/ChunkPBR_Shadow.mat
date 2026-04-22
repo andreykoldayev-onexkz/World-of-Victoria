@@ -41,22 +41,22 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlbedoContrast: 1.18
-    - _AoStrength: 0.03
-    - _BrightnessBlackPoint: 0.055
+    - _AlbedoContrast: 1.2
+    - _AoStrength: 0.08
+    - _BrightnessBlackPoint: 0.05
     - _BrightnessFloor: 0
-    - _BrightnessGamma: 1.28
-    - _BrightnessWhitePoint: 0.98
+    - _BrightnessGamma: 1.24
+    - _BrightnessWhitePoint: 0.97
     - _LightVolumeStrength: 0
-    - _Metallic: 0
+    - _Metallic: 0.03
     - _NormalScale: 1
-    - _ProbeGiStrength: 0.14
-    - _RoughnessBias: 0.02
-    - _ShadowBoost: 0.16
+    - _ProbeGiStrength: 0.12
+    - _RoughnessBias: -0.02
+    - _ShadowBoost: 0.12
     - _UseVertexBrightness: 1
-    - _VertexLightBlend: 0.42
+    - _VertexLightBlend: 1
     m_Colors:
-    - _BaseTint: {r: 1.08, g: 1.06, b: 1, a: 1}
+    - _BaseTint: {r: 1.06, g: 1.05, b: 1, a: 1}
     - _WorldLightVolumeSize: {r: 256, g: 64, b: 256, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
