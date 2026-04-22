@@ -1,7 +1,7 @@
 # **ДИЗАЙН-ДОКУМЕНТ: MINECRAFT RD-131655 CLONE (UNITY ENGINE)**
 ## **Системный анализ для Unity реализации**
 
-*Архитектор: AVK Software*  
+*Архитектор: AVK Software*
 *Дата: 2026-04-06*  
 *Целевой движок: Unity 2022.3 LTS или выше*  
 *Базовый код: thecodeofnotch/rd-131655 (May 10-13, 2009)*
