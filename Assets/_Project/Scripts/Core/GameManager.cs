@@ -125,7 +125,15 @@ namespace WorldOfVictoria.Core
 
                 try
                 {
-                    saveData = SaveSystem.Load(SaveSystem.GetLastSavePath());
+                    var loadedSave = SaveSystem.Load(SaveSystem.GetLastSavePath());
+                    if (IsCompatibleWithCurrentWorldProfile(loadedSave))
+                    {
+                        saveData = loadedSave;
+                    }
+                    else
+                    {
+                        Debug.Log($"Ignoring incompatible save profile '{loadedSave.WorldProfileId}' and generating a fresh world for profile '{WorldGenerator.CurrentWorldProfileId}'.", this);
+                    }
                 }
                 catch (System.Exception exception)
                 {
@@ -143,7 +151,7 @@ namespace WorldOfVictoria.Core
             }
             else
             {
-                SetLoadingState(true, 0.35f, "Generating world...", "Carving caves and calculating light");
+                SetLoadingState(true, 0.35f, "Generating world...", "Building superflat terrain and calculating light");
                 GenerateRuntimeWorld();
                 yield return null;
                 SetLoadingState(true, 0.75f, "Spawning player...", "Preparing initial chunk region");
@@ -194,6 +202,7 @@ namespace WorldOfVictoria.Core
                 runtimeWorldData.Height,
                 runtimeWorldData.Depth,
                 lastGeneratedSeed,
+                WorldGenerator.CurrentWorldProfileId,
                 playerRoot != null ? playerRoot.position : GetDefaultSpawnPosition(),
                 runtimeWorldData.RawBlocks.ToArray());
 
@@ -212,6 +221,17 @@ namespace WorldOfVictoria.Core
             yield return null;
 
             var saveData = SaveSystem.Load(SaveSystem.GetLastSavePath());
+            if (!IsCompatibleWithCurrentWorldProfile(saveData))
+            {
+                Debug.Log($"Last save profile '{saveData.WorldProfileId}' is incompatible with '{WorldGenerator.CurrentWorldProfileId}'. Generating a fresh world instead.", this);
+                GenerateRuntimeWorld();
+                TeleportPlayer(GetDefaultSpawnPosition());
+                SetLoadingState(true, 1f, "Generated", WorldGenerator.CurrentWorldProfileId);
+                yield return null;
+                SetLoadingState(false, 1f, string.Empty, string.Empty);
+                isBootstrapping = false;
+                yield break;
+            }
             SetLoadingState(true, 0.55f, "Restoring world...", "Applying blocks and rebuilding chunks");
             ApplySaveData(saveData);
             yield return null;
@@ -232,8 +252,6 @@ namespace WorldOfVictoria.Core
         {
             runtimeWorldData = new WorldData(saveData.Width, saveData.Height, saveData.Depth);
             runtimeWorldData.LoadBlocks(saveData.Blocks);
-            runtimeWorldData.CalculateLightDepths();
-            WorldGenerator.ApplySurfacePalette(runtimeWorldData);
             runtimeWorldData.CalculateLightDepths();
             runtimeChunkManager = new ChunkManager(runtimeWorldData, worldConfig.ChunkSize);
             lastGeneratedSeed = saveData.GenerationSeed;
@@ -352,6 +370,11 @@ namespace WorldOfVictoria.Core
 
             loadingScreen.SetVisible(visible);
             loadingScreen.SetProgress(progress, status, detail);
+        }
+
+        private static bool IsCompatibleWithCurrentWorldProfile(in GameSaveData saveData)
+        {
+            return string.Equals(saveData.WorldProfileId, WorldGenerator.CurrentWorldProfileId, System.StringComparison.Ordinal);
         }
     }
 }

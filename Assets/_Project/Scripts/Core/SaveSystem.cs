@@ -8,7 +8,7 @@ namespace WorldOfVictoria.Core
     public static class SaveSystem
     {
         private const string SaveMagic = "WOV1";
-        private const int SaveVersion = 1;
+        private const int SaveVersion = 2;
         public const string LastSavePathPlayerPrefsKey = "WorldOfVictoria.LastSavePath";
 
         public static string DefaultSavePath => Path.Combine(Application.persistentDataPath, "world-of-victoria-save.dat");
@@ -44,6 +44,7 @@ namespace WorldOfVictoria.Core
             writer.Write(saveData.Height);
             writer.Write(saveData.Depth);
             writer.Write(saveData.GenerationSeed);
+            writer.Write(saveData.WorldProfileId ?? string.Empty);
             writer.Write(saveData.PlayerPosition.x);
             writer.Write(saveData.PlayerPosition.y);
             writer.Write(saveData.PlayerPosition.z);
@@ -66,7 +67,7 @@ namespace WorldOfVictoria.Core
             }
 
             var version = reader.ReadInt32();
-            if (version != SaveVersion)
+            if (version != 1 && version != SaveVersion)
             {
                 throw new InvalidDataException($"Unsupported save version {version}.");
             }
@@ -75,6 +76,7 @@ namespace WorldOfVictoria.Core
             var height = reader.ReadInt32();
             var depth = reader.ReadInt32();
             var seed = reader.ReadInt32();
+            var worldProfileId = version >= 2 ? reader.ReadString() : string.Empty;
             var playerPosition = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
             var blockLength = reader.ReadInt32();
             var blocks = reader.ReadBytes(blockLength);
@@ -84,19 +86,20 @@ namespace WorldOfVictoria.Core
                 throw new EndOfStreamException($"Save file ended unexpectedly. Expected {blockLength} block bytes, got {blocks.Length}.");
             }
 
-            return new GameSaveData(width, height, depth, seed, playerPosition, blocks);
+            return new GameSaveData(width, height, depth, seed, worldProfileId, playerPosition, blocks);
         }
     }
 
     [Serializable]
     public readonly struct GameSaveData
     {
-        public GameSaveData(int width, int height, int depth, int generationSeed, Vector3 playerPosition, byte[] blocks)
+        public GameSaveData(int width, int height, int depth, int generationSeed, string worldProfileId, Vector3 playerPosition, byte[] blocks)
         {
             Width = width;
             Height = height;
             Depth = depth;
             GenerationSeed = generationSeed;
+            WorldProfileId = worldProfileId ?? string.Empty;
             PlayerPosition = playerPosition;
             Blocks = blocks;
         }
@@ -105,6 +108,7 @@ namespace WorldOfVictoria.Core
         public int Height { get; }
         public int Depth { get; }
         public int GenerationSeed { get; }
+        public string WorldProfileId { get; }
         public Vector3 PlayerPosition { get; }
         public byte[] Blocks { get; }
     }
