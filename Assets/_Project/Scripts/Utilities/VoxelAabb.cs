@@ -13,6 +13,8 @@ namespace WorldOfVictoria.Utilities
         public Vector3 Min;
         public Vector3 Max;
 
+        public Vector3 Center => (Min + Max) * 0.5f;
+
         public VoxelAabb Expand(Vector3 delta)
         {
             var min = Min;
@@ -89,6 +91,13 @@ namespace WorldOfVictoria.Utilities
             }
 
             return deltaZ;
+        }
+
+        public bool Intersects(VoxelAabb other)
+        {
+            return Max.x > other.Min.x && Min.x < other.Max.x
+                && Max.y > other.Min.y && Min.y < other.Max.y
+                && Max.z > other.Min.z && Min.z < other.Max.z;
         }
     }
 }
