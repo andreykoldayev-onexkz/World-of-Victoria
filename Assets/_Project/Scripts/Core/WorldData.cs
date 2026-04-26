@@ -9,6 +9,7 @@ namespace WorldOfVictoria.Core
     {
         private const byte MaxSkyLight = 15;
         private const byte SkyLightFalloff = 1;
+        private const int LocalSkyLightRadius = MaxSkyLight;
 
         private readonly byte[] blocks;
         private readonly int[] lightDepths;
@@ -193,7 +194,7 @@ namespace WorldOfVictoria.Core
                 }
             }
 
-            RebuildSkyLight();
+            RebuildSkyLightFull();
         }
 
         public int GetLightDepth(int x, int z)
@@ -245,7 +246,7 @@ namespace WorldOfVictoria.Core
             }
 
             lightDepths[x + z * Width] = newDepth;
-            RebuildSkyLight();
+            RebuildSkyLightRegion(x, z, LocalSkyLightRadius);
 
             if (oldDepth != newDepth)
             {
@@ -253,7 +254,7 @@ namespace WorldOfVictoria.Core
             }
         }
 
-        private void RebuildSkyLight()
+        private void RebuildSkyLightFull()
         {
             Array.Clear(skyLight, 0, skyLight.Length);
 
@@ -301,6 +302,68 @@ namespace WorldOfVictoria.Core
             }
         }
 
+        private void RebuildSkyLightRegion(int centerX, int centerZ, int radius)
+        {
+            var minX = Mathf.Max(0, centerX - radius);
+            var maxX = Mathf.Min(Width - 1, centerX + radius);
+            var minZ = Mathf.Max(0, centerZ - radius);
+            var maxZ = Mathf.Min(Height - 1, centerZ + radius);
+
+            for (var x = minX; x <= maxX; x++)
+            {
+                for (var z = minZ; z <= maxZ; z++)
+                {
+                    for (var y = 0; y < Depth; y++)
+                    {
+                        skyLight[GetIndexUnchecked(x, y, z)] = 0;
+                    }
+                }
+            }
+
+            var queueHead = 0;
+            var queueTail = 0;
+
+            for (var x = minX; x <= maxX; x++)
+            {
+                for (var z = minZ; z <= maxZ; z++)
+                {
+                    var lightDepth = lightDepths[x + z * Width];
+                    for (var y = Depth - 1; y > lightDepth; y--)
+                    {
+                        if (IsSolidBlock(x, y, z))
+                        {
+                            continue;
+                        }
+
+                        var index = GetIndexUnchecked(x, y, z);
+                        skyLight[index] = MaxSkyLight;
+                        propagationQueue[queueTail++] = index;
+                    }
+                }
+            }
+
+            while (queueHead < queueTail)
+            {
+                var index = propagationQueue[queueHead++];
+                var currentLight = skyLight[index];
+                if (currentLight == 0)
+                {
+                    continue;
+                }
+
+                DecodeIndex(index, out var x, out var y, out var z);
+                var nextLight = (byte)Mathf.Max(0, currentLight - SkyLightFalloff);
+                var downLight = currentLight == MaxSkyLight ? MaxSkyLight : nextLight;
+
+                TryPropagateLightRegion(x - 1, y, z, nextLight, VoxelLightDirection.West, minX, maxX, minZ, maxZ, ref queueTail);
+                TryPropagateLightRegion(x + 1, y, z, nextLight, VoxelLightDirection.East, minX, maxX, minZ, maxZ, ref queueTail);
+                TryPropagateLightRegion(x, y - 1, z, downLight, VoxelLightDirection.Down, minX, maxX, minZ, maxZ, ref queueTail);
+                TryPropagateLightRegion(x, y + 1, z, nextLight, VoxelLightDirection.Up, minX, maxX, minZ, maxZ, ref queueTail);
+                TryPropagateLightRegion(x, y, z - 1, nextLight, VoxelLightDirection.North, minX, maxX, minZ, maxZ, ref queueTail);
+                TryPropagateLightRegion(x, y, z + 1, nextLight, VoxelLightDirection.South, minX, maxX, minZ, maxZ, ref queueTail);
+            }
+        }
+
         private void TryPropagateLight(int x, int y, int z, byte lightLevel, VoxelLightDirection direction, ref int queueTail)
         {
             if (lightLevel == 0 || !InBounds(x, y, z))
@@ -328,6 +391,26 @@ namespace WorldOfVictoria.Core
 
             skyLight[index] = propagatedLight;
             propagationQueue[queueTail++] = index;
+        }
+
+        private void TryPropagateLightRegion(
+            int x,
+            int y,
+            int z,
+            byte lightLevel,
+            VoxelLightDirection direction,
+            int minX,
+            int maxX,
+            int minZ,
+            int maxZ,
+            ref int queueTail)
+        {
+            if (x < minX || x > maxX || z < minZ || z > maxZ)
+            {
+                return;
+            }
+
+            TryPropagateLight(x, y, z, lightLevel, direction, ref queueTail);
         }
 
         private void DecodeIndex(int index, out int x, out int y, out int z)

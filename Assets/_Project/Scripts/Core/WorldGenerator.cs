@@ -3,7 +3,7 @@ namespace WorldOfVictoria.Core
     public sealed class WorldGenerator
     {
         public const string CurrentWorldProfileId = "rd132211-superflat-y43-v1";
-        private const int GeneratedSurfaceY = 43;
+        public const int GeneratedSurfaceY = 43;
 
         public void Generate(WorldData worldData, WorldConfig worldConfig, int seed)
         {

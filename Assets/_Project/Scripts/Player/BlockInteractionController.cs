@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using WorldOfVictoria.Core;
+using WorldOfVictoria.UI;
 using WorldOfVictoria.Utilities;
 
 namespace WorldOfVictoria.Player
@@ -13,6 +14,8 @@ namespace WorldOfVictoria.Player
         [SerializeField] private Camera playerCamera;
         [SerializeField] private BlockOutlineRenderer outlineRenderer;
         [SerializeField] private PlayerController playerController;
+        [SerializeField] private InteractionHudUI interactionHud;
+        [SerializeField] private InteractionAudioController interactionAudio;
 
         [Header("Raycast")]
         [SerializeField, Min(0.5f)] private float maxReachDistance = 5f;
@@ -89,6 +92,7 @@ namespace WorldOfVictoria.Player
                 outlineRenderer?.Hide();
             }
 
+            HandleBlockSelection();
             HandleBlockModification();
 
             if (drawDebugRay)
@@ -137,6 +141,31 @@ namespace WorldOfVictoria.Player
             {
                 playerController = GetComponent<PlayerController>();
             }
+
+            if (interactionAudio == null)
+            {
+                interactionAudio = GetComponent<InteractionAudioController>();
+            }
+
+            if (interactionAudio == null)
+            {
+                interactionAudio = gameObject.AddComponent<InteractionAudioController>();
+            }
+
+            if (interactionHud == null)
+            {
+                var uiRoot = GameObject.Find("UI");
+                if (uiRoot != null)
+                {
+                    interactionHud = uiRoot.GetComponent<InteractionHudUI>();
+                    if (interactionHud == null)
+                    {
+                        interactionHud = uiRoot.AddComponent<InteractionHudUI>();
+                    }
+                }
+            }
+
+            interactionHud?.SetSelectedBlock(selectedBlockType);
         }
 
         private void BindInput()
@@ -166,6 +195,7 @@ namespace WorldOfVictoria.Player
             {
                 var hit = currentHitResult.Value;
                 gameManager.RuntimeWorldData.SetBlock(hit.X, hit.Y, hit.Z, VoxelBlockIds.Air);
+                interactionAudio?.PlayBreak();
                 return;
             }
 
@@ -180,7 +210,27 @@ namespace WorldOfVictoria.Player
                 return;
             }
 
-            gameManager.RuntimeWorldData.SetBlock(placePosition.x, placePosition.y, placePosition.z, selectedBlockType);
+            gameManager.RuntimeWorldData.SetBlock(placePosition.x, placePosition.y, placePosition.z, ResolvePlacedBlockType(placePosition));
+            interactionAudio?.PlayPlace();
+        }
+
+        private void HandleBlockSelection()
+        {
+            if (Keyboard.current == null)
+            {
+                return;
+            }
+
+            if (Keyboard.current.digit1Key.wasPressedThisFrame)
+            {
+                selectedBlockType = VoxelBlockIds.Stone;
+                interactionHud?.SetSelectedBlock(selectedBlockType);
+            }
+            else if (Keyboard.current.digit2Key.wasPressedThisFrame)
+            {
+                selectedBlockType = VoxelBlockIds.Grass;
+                interactionHud?.SetSelectedBlock(selectedBlockType);
+            }
         }
 
         private bool CanPlaceBlockAt(Vector3Int position)
@@ -227,6 +277,16 @@ namespace WorldOfVictoria.Player
             return a.Max.x > b.Min.x && a.Min.x < b.Max.x
                 && a.Max.y > b.Min.y && a.Min.y < b.Max.y
                 && a.Max.z > b.Min.z && a.Min.z < b.Max.z;
+        }
+
+        private byte ResolvePlacedBlockType(Vector3Int position)
+        {
+            if (position.y == WorldGenerator.GeneratedSurfaceY)
+            {
+                return VoxelBlockIds.Grass;
+            }
+
+            return selectedBlockType;
         }
     }
 }
