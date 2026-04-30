@@ -45,7 +45,7 @@ public static class Rd132328Week2Setup
 
         var importer = (TextureImporter)AssetImporter.GetAtPath(TargetTexturePath);
         importer.textureType = TextureImporterType.Default;
-        importer.filterMode = FilterMode.Point;
+        importer.filterMode = FilterMode.Bilinear;
         importer.wrapMode = TextureWrapMode.Clamp;
         importer.alphaIsTransparency = true;
         importer.mipmapEnabled = false;
