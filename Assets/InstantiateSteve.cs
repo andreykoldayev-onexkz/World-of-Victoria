@@ -3,19 +3,18 @@ using UnityEngine;
 
 public class InstantiateSteve
 {
-    public static void Execute()
+    public static string Execute()
     {
-        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Characters/RealisticSteve.glb");
+        string prefabPath = "Assets/_Project/Prefabs/Characters/RealisticSteve_Modified.glb";
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         if (prefab != null)
         {
             GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            instance.name = "RealisticSteve";
-            instance.transform.position = new Vector3(0, 0, 0);
-            Debug.Log("Instantiated RealisticSteve");
+            instance.name = "RealisticSteve_Modified_Instance";
+            instance.transform.position = new Vector3(0, 10, 0);
+            Selection.activeGameObject = instance;
+            return "Instantiated prefab";
         }
-        else
-        {
-            Debug.LogError("Could not find prefab at Assets/_Project/Prefabs/Characters/RealisticSteve.glb");
-        }
+        return "Prefab not found";
     }
 }

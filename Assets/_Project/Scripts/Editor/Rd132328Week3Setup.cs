@@ -12,6 +12,7 @@ public static class Rd132328Week3Setup
     public static void Execute()
     {
         EnsureSceneIsOpen(GameScenePath);
+        CleanupLegacySceneObjects();
         EnsureZombiePrefabHasController();
         EnsureSceneTestZombie();
 
@@ -24,7 +25,8 @@ public static class Rd132328Week3Setup
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ZombiePrefabPath);
         var prefabHasZombie = prefab != null && prefab.GetComponent<Zombie>() != null;
         var sceneZombie = GameObject.Find("Zombie_Test");
-        return $"PrefabHasZombie={prefabHasZombie}; SceneZombie={(sceneZombie != null ? sceneZombie.name : "missing")}";
+        var steveLeftovers = FindLegacySceneObjectCount();
+        return $"PrefabHasZombie={prefabHasZombie}; SceneZombie={(sceneZombie != null ? sceneZombie.name : "missing")}; LegacySceneObjects={steveLeftovers}";
     }
 
     private static void EnsureSceneIsOpen(string scenePath)
@@ -54,12 +56,67 @@ public static class Rd132328Week3Setup
         }
     }
 
+    private static void CleanupLegacySceneObjects()
+    {
+        var scene = SceneManager.GetActiveScene();
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            CleanupLegacyRecursive(root.transform);
+        }
+
+        EditorSceneManager.MarkSceneDirty(scene);
+    }
+
+    private static void CleanupLegacyRecursive(Transform current)
+    {
+        for (var i = current.childCount - 1; i >= 0; i--)
+        {
+            CleanupLegacyRecursive(current.GetChild(i));
+        }
+
+        if (IsLegacyObject(current.gameObject))
+        {
+            Object.DestroyImmediate(current.gameObject);
+        }
+    }
+
+    private static int FindLegacySceneObjectCount()
+    {
+        var count = 0;
+        var scene = SceneManager.GetActiveScene();
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            CountLegacyRecursive(root.transform, ref count);
+        }
+
+        return count;
+    }
+
+    private static void CountLegacyRecursive(Transform current, ref int count)
+    {
+        if (IsLegacyObject(current.gameObject))
+        {
+            count++;
+        }
+
+        for (var i = 0; i < current.childCount; i++)
+        {
+            CountLegacyRecursive(current.GetChild(i), ref count);
+        }
+    }
+
+    private static bool IsLegacyObject(GameObject gameObject)
+    {
+        var objectName = gameObject.name;
+        return objectName.Contains("RealisticSteve") || objectName.Contains("SteveVisual");
+    }
+
     private static void EnsureSceneTestZombie()
     {
         var existing = GameObject.Find("Zombie_Test");
         if (existing != null)
         {
-            return;
+            Object.DestroyImmediate(existing);
         }
 
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ZombiePrefabPath);

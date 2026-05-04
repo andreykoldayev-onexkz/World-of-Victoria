@@ -19,14 +19,14 @@ namespace WorldOfVictoria.Rendering.Character
         [Header("Zombie AI")]
         [SerializeField] private float detectionRange = 10f;
         [SerializeField] private float loseInterestRange = 15f;
-        [SerializeField] private float chaseSpeed = 0.08f;
-        [SerializeField] private float wanderSpeed = 0.02f;
+        [SerializeField] private float chaseSpeed = 0.05f;
+        [SerializeField] private float wanderSpeed = 0.015f;
         [SerializeField] private float idleDuration = 3f;
         [SerializeField] private float wanderDuration = 3f;
 
         [Header("Zombie Presentation")]
         [SerializeField] private ZombieModelView modelView;
-        [SerializeField] private float walkCycleFrequency = 5f;
+        [SerializeField] private float walkCycleFrequency = 3.1f;
         [SerializeField] private float pushApartStrength = 0.05f;
         [SerializeField] private bool logPlayerCollision = true;
 
@@ -102,12 +102,12 @@ namespace WorldOfVictoria.Rendering.Character
             var planarSpeed = new Vector2(velocity.x, velocity.z).magnitude;
             if (planarSpeed > 0.0001f)
             {
-                walkPhase += Time.deltaTime * walkCycleFrequency * Mathf.Clamp(planarSpeed * 8f, 0.35f, 1.35f);
+                walkPhase += Time.deltaTime * walkCycleFrequency * Mathf.Clamp(planarSpeed * 10f, 0.3f, 1.05f);
             }
 
             modelView?.SetAnimationPose(
                 walkPhase,
-                Mathf.Clamp01(planarSpeed * 12f),
+                Mathf.Clamp01(planarSpeed * 8f),
                 currentYaw,
                 0f,
                 Time.time);

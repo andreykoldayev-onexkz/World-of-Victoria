@@ -1,11 +1,7 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 using UnityEngine.Rendering;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace WorldOfVictoria.Rendering.Character
 {
@@ -13,19 +9,14 @@ namespace WorldOfVictoria.Rendering.Character
     [DisallowMultipleComponent]
     public sealed class ZombieModelView : MonoBehaviour
     {
-        private const string HighDetailModelAssetPath = "Assets/_Project/Prefabs/Characters/RealisticSteveRigged.glb";
-        private const string WalkingAnimationAssetPath = "Assets/_Project/Prefabs/Characters/RealisticSteveRigged_walking.glb";
-        private const string RunningAnimationAssetPath = "Assets/_Project/Prefabs/Characters/RealisticSteveRigged_running.glb";
-        private const string HighDetailFallbackTexturePath = "Assets/_Project/Textures/Characters/RealisticSteve/texture_0.png";
-        private static readonly Dictionary<int, Material> UpgradedMaterials = new();
-        private static Material sharedHighDetailMaterial;
-
-        [Header("Fallback Cube Model")]
-        [SerializeField] private Material characterMaterial;
-
-        [Header("High Detail Model")]
-        [SerializeField] private bool useHighDetailModel = true;
+        [Header("Rigged Model")]
+        [SerializeField] private GameObject riggedModelPrefab;
+        [SerializeField] private AnimationClip idleClip;
+        [SerializeField] private AnimationClip walkClip;
+        [SerializeField] private AnimationClip runClip;
+        [SerializeField] private Material overrideMaterial;
         [SerializeField] private float targetModelHeight = 1.72f;
+        [SerializeField] private float entityEyeHeight = 1.62f;
         [SerializeField] private Vector3 modelEulerOffset = Vector3.zero;
 
         [Header("Preview")]
@@ -42,11 +33,18 @@ namespace WorldOfVictoria.Rendering.Character
         [SerializeField] private float idleBreathAmplitude = 1.5f;
         [SerializeField] private float idleSwayAmplitude = 1.5f;
         [SerializeField] private float squashStretchAmplitude = 0.02f;
+        [SerializeField] private float zombieArmForwardPitch = -72f;
+        [SerializeField] private float zombieForearmBend = -12f;
+        [SerializeField] private float zombieArmSwingAmplitude = 7f;
 
-        private ZombieModel zombieModel;
         private Transform visualRoot;
         private Transform motionRoot;
         private Transform modelRoot;
+        private Transform headBone;
+        private Transform leftArmBone;
+        private Transform rightArmBone;
+        private Transform leftForeArmBone;
+        private Transform rightForeArmBone;
         private Animator rigAnimator;
         private PlayableGraph animationGraph;
         private AnimationMixerPlayable animationMixer;
@@ -54,28 +52,28 @@ namespace WorldOfVictoria.Rendering.Character
         private AnimationClipPlayable walkPlayable;
         private AnimationClipPlayable runPlayable;
         private bool animationGraphValid;
-        private bool usingHighDetailModel;
         private bool modelDirty = true;
+        private bool hasPoseState;
+        private float poseWalkPhase;
+        private float poseMoveAmount;
+        private float poseYawDegrees;
+        private float poseHeadPitchDegrees;
+        private float poseIdleTime;
+        private Quaternion headBaseRotation;
+        private Quaternion leftArmBaseRotation;
+        private Quaternion rightArmBaseRotation;
+        private Quaternion leftForeArmBaseRotation;
+        private Quaternion rightForeArmBaseRotation;
 
-        public Material CharacterMaterial
+        public void Configure(GameObject modelPrefab, AnimationClip idle, AnimationClip walk, AnimationClip run, Material material)
         {
-            get => characterMaterial;
-            set
-            {
-                characterMaterial = value;
-                zombieModel?.SetMaterial(characterMaterial);
-            }
-        }
-
-#if UNITY_EDITOR
-        public void ForceRefreshInEditor()
-        {
-            UpgradedMaterials.Clear();
-            sharedHighDetailMaterial = null;
+            riggedModelPrefab = modelPrefab;
+            idleClip = idle;
+            walkClip = walk;
+            runClip = run;
+            overrideMaterial = material;
             modelDirty = true;
-            RebuildModelIfNeeded();
         }
-#endif
 
         private void OnEnable()
         {
@@ -84,10 +82,14 @@ namespace WorldOfVictoria.Rendering.Character
 
         private void OnDisable()
         {
-            zombieModel = null;
             visualRoot = null;
             motionRoot = null;
             modelRoot = null;
+            headBone = null;
+            leftArmBone = null;
+            rightArmBone = null;
+            leftForeArmBone = null;
+            rightForeArmBone = null;
             DestroyAnimationGraph();
         }
 
@@ -100,50 +102,54 @@ namespace WorldOfVictoria.Rendering.Character
         {
             RebuildModelIfNeeded();
 
-            if (autoPreviewAnimation)
+            if (!Application.isPlaying && autoPreviewAnimation)
             {
                 ApplyCurrentPose();
             }
         }
 
-        public void SetAnimationPose(float walkPhase, float moveAmount, float yawDegrees, float headPitchDegrees, float idleTime)
+        private void LateUpdate()
         {
             RebuildModelIfNeeded();
 
-            if (usingHighDetailModel)
+            if (!hasPoseState)
             {
-                ApplyHighDetailPose(walkPhase, moveAmount, yawDegrees, headPitchDegrees, idleTime);
                 return;
             }
 
-            zombieModel?.ApplyPose(walkPhase, moveAmount, idleTime, yawDegrees, headPitchDegrees);
+            ApplyHighDetailPose(poseWalkPhase, poseMoveAmount, poseYawDegrees, poseHeadPitchDegrees, poseIdleTime);
+        }
+
+        public void SetAnimationPose(float walkPhase, float moveAmount, float yawDegrees, float headPitchDegrees, float idleTime)
+        {
+            RebuildModelIfNeeded();
+            hasPoseState = true;
+            poseWalkPhase = walkPhase;
+            poseMoveAmount = moveAmount;
+            poseYawDegrees = yawDegrees;
+            poseHeadPitchDegrees = headPitchDegrees;
+            poseIdleTime = idleTime;
         }
 
         private void RebuildModelIfNeeded()
         {
-            if (!modelDirty && (usingHighDetailModel ? visualRoot != null : zombieModel != null))
+            if (!modelDirty && visualRoot != null)
             {
                 return;
             }
 
             CleanupGeneratedVisuals();
 
-            if (useHighDetailModel && TryBuildHighDetailModel())
+            if (TryBuildHighDetailModel())
             {
                 modelDirty = false;
                 return;
             }
-
-            zombieModel = new ZombieModel(transform, characterMaterial);
-            zombieModel.SetMaterial(characterMaterial);
-            usingHighDetailModel = false;
-            modelDirty = false;
         }
 
         private bool TryBuildHighDetailModel()
         {
-#if UNITY_EDITOR
-            if (!TryLoadRiggedAssets(out var modelAsset, out var idleClip, out var walkClip, out var runClip))
+            if (riggedModelPrefab == null)
             {
                 return false;
             }
@@ -152,13 +158,13 @@ namespace WorldOfVictoria.Rendering.Character
             var yawRoot = CreatePivot("YawPivot", visualRoot, Vector3.zero, Quaternion.identity);
             motionRoot = CreatePivot("MotionPivot", yawRoot, Vector3.zero, Quaternion.identity);
 
-            var instance = Instantiate(modelAsset, motionRoot, false);
+            var instance = Instantiate(riggedModelPrefab, motionRoot, false);
             if (instance == null)
             {
                 return false;
             }
 
-            instance.name = "RealisticSteveVisual";
+            instance.name = "ZombieGeneratedVisual";
             instance.transform.SetParent(motionRoot, false);
             instance.transform.localPosition = Vector3.zero;
             instance.transform.localRotation = Quaternion.Euler(modelEulerOffset);
@@ -167,67 +173,11 @@ namespace WorldOfVictoria.Rendering.Character
 
             ConfigureImportedRenderers(instance);
             FitModelToTargetHeight(instance.transform);
+            CacheRigBones(instance.transform);
             InitializeAnimationGraph(instance, idleClip, walkClip, runClip);
 
-            usingHighDetailModel = true;
-            zombieModel = null;
             return true;
-#else
-            return false;
-#endif
         }
-
-#if UNITY_EDITOR
-        private static bool TryLoadRiggedAssets(out GameObject modelAsset, out AnimationClip idleClip, out AnimationClip walkClip, out AnimationClip runClip)
-        {
-            modelAsset = LoadModelAsset(HighDetailModelAssetPath);
-            idleClip = LoadFirstAnimationClip(HighDetailModelAssetPath);
-            walkClip = LoadFirstAnimationClip(WalkingAnimationAssetPath);
-            runClip = LoadFirstAnimationClip(RunningAnimationAssetPath);
-
-            return modelAsset != null && (idleClip != null || walkClip != null || runClip != null);
-        }
-
-        private static GameObject LoadModelAsset(string assetPath)
-        {
-            var modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-            if (modelAsset != null)
-            {
-                return modelAsset;
-            }
-
-            var nestedAssets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            for (var i = 0; i < nestedAssets.Length; i++)
-            {
-                if (nestedAssets[i] is GameObject nestedGameObject)
-                {
-                    return nestedGameObject;
-                }
-            }
-
-            return null;
-        }
-
-        private static AnimationClip LoadFirstAnimationClip(string assetPath)
-        {
-            var directClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(assetPath);
-            if (directClip != null)
-            {
-                return directClip;
-            }
-
-            var nestedAssets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            for (var i = 0; i < nestedAssets.Length; i++)
-            {
-                if (nestedAssets[i] is AnimationClip clip && !clip.name.StartsWith("__preview__", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return clip;
-                }
-            }
-
-            return null;
-        }
-#endif
 
         private void InitializeAnimationGraph(GameObject instance, AnimationClip idleClip, AnimationClip walkClip, AnimationClip runClip)
         {
@@ -292,7 +242,6 @@ namespace WorldOfVictoria.Rendering.Character
 
         private void ConfigureImportedRenderers(GameObject instance)
         {
-            var resolvedHighDetailMaterial = GetOrCreateHighDetailMaterial();
             foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true))
             {
                 renderer.shadowCastingMode = ShadowCastingMode.On;
@@ -305,152 +254,16 @@ namespace WorldOfVictoria.Rendering.Character
                     skinnedMeshRenderer.updateWhenOffscreen = true;
                 }
 
-                if (resolvedHighDetailMaterial != null)
+                if (overrideMaterial != null)
                 {
                     var replacement = new Material[renderer.sharedMaterials.Length];
                     for (var i = 0; i < replacement.Length; i++)
                     {
-                        replacement[i] = resolvedHighDetailMaterial;
+                        replacement[i] = overrideMaterial;
                     }
                     renderer.sharedMaterials = replacement;
-                    continue;
-                }
-
-                var materials = renderer.sharedMaterials;
-                var updated = false;
-                for (var i = 0; i < materials.Length; i++)
-                {
-                    var upgraded = UpgradeMaterialForUrp(materials[i]);
-                    if (upgraded == null || upgraded == materials[i])
-                    {
-                        continue;
-                    }
-
-                    materials[i] = upgraded;
-                    updated = true;
-                }
-
-                if (updated)
-                {
-                    renderer.sharedMaterials = materials;
                 }
             }
-        }
-
-        private Material GetOrCreateHighDetailMaterial()
-        {
-#if UNITY_EDITOR
-            if (sharedHighDetailMaterial != null)
-            {
-                return sharedHighDetailMaterial;
-            }
-
-            AssetDatabase.ImportAsset(HighDetailFallbackTexturePath, ImportAssetOptions.ForceUpdate);
-            var fallbackTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(HighDetailFallbackTexturePath);
-            if (fallbackTexture == null)
-            {
-                return null;
-            }
-
-            sharedHighDetailMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"))
-            {
-                name = "RealisticSteve_RuntimeURP"
-            };
-            sharedHighDetailMaterial.SetTexture("_BaseMap", fallbackTexture);
-            sharedHighDetailMaterial.SetColor("_BaseColor", Color.white);
-            ConfigureUrpLitMaterial(sharedHighDetailMaterial);
-            return sharedHighDetailMaterial;
-#else
-            return null;
-#endif
-        }
-
-        private Material UpgradeMaterialForUrp(Material sourceMaterial)
-        {
-            if (sourceMaterial == null)
-            {
-                return null;
-            }
-
-            if (sourceMaterial.shader != null && sourceMaterial.shader.name == "Universal Render Pipeline/Lit")
-            {
-                ApplyFallbackBaseMapIfNeeded(sourceMaterial);
-                ConfigureUrpLitMaterial(sourceMaterial);
-                return sourceMaterial;
-            }
-
-            var instanceId = sourceMaterial.GetInstanceID();
-            if (UpgradedMaterials.TryGetValue(instanceId, out var cachedMaterial) && cachedMaterial != null)
-            {
-                return cachedMaterial;
-            }
-
-            var upgradedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"))
-            {
-                name = $"{sourceMaterial.name}_URP"
-            };
-
-            if (sourceMaterial.HasProperty("_BaseMap"))
-            {
-                upgradedMaterial.SetTexture("_BaseMap", sourceMaterial.GetTexture("_BaseMap"));
-            }
-            else if (sourceMaterial.HasProperty("_MainTex"))
-            {
-                upgradedMaterial.SetTexture("_BaseMap", sourceMaterial.GetTexture("_MainTex"));
-            }
-
-            if (sourceMaterial.HasProperty("_BaseColor"))
-            {
-                upgradedMaterial.SetColor("_BaseColor", sourceMaterial.GetColor("_BaseColor"));
-            }
-            else if (sourceMaterial.HasProperty("_Color"))
-            {
-                upgradedMaterial.SetColor("_BaseColor", sourceMaterial.GetColor("_Color"));
-            }
-            else
-            {
-                upgradedMaterial.SetColor("_BaseColor", Color.white);
-            }
-
-            ApplyFallbackBaseMapIfNeeded(upgradedMaterial);
-
-            if (sourceMaterial.HasProperty("_BumpMap"))
-            {
-                upgradedMaterial.SetTexture("_BumpMap", sourceMaterial.GetTexture("_BumpMap"));
-                upgradedMaterial.EnableKeyword("_NORMALMAP");
-            }
-
-            ConfigureUrpLitMaterial(upgradedMaterial);
-            UpgradedMaterials[instanceId] = upgradedMaterial;
-            return upgradedMaterial;
-        }
-
-        private void ApplyFallbackBaseMapIfNeeded(Material material)
-        {
-#if UNITY_EDITOR
-            if (material == null || material.GetTexture("_BaseMap") != null)
-            {
-                return;
-            }
-
-            AssetDatabase.ImportAsset(HighDetailFallbackTexturePath, ImportAssetOptions.ForceUpdate);
-            var fallbackTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(HighDetailFallbackTexturePath);
-            if (fallbackTexture != null)
-            {
-                material.SetTexture("_BaseMap", fallbackTexture);
-            }
-#endif
-        }
-
-        private void ConfigureUrpLitMaterial(Material material)
-        {
-            material.SetFloat("_Surface", 0f);
-            material.SetFloat("_Blend", 0f);
-            material.SetFloat("_Cull", 2f);
-            material.SetFloat("_Metallic", 0.02f);
-            material.SetFloat("_Smoothness", 0.18f);
-            material.SetFloat("_OcclusionStrength", 1f);
-            material.enableInstancing = true;
         }
 
         private void FitModelToTargetHeight(Transform instanceRoot)
@@ -477,6 +290,7 @@ namespace WorldOfVictoria.Rendering.Character
             var feetWorld = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             var feetLocal = motionRoot.InverseTransformPoint(feetWorld);
 
+            visualRoot.localPosition = new Vector3(0f, -entityEyeHeight, 0f);
             instanceRoot.localPosition = new Vector3(
                 -centerLocal.x,
                 -feetLocal.y,
@@ -496,12 +310,15 @@ namespace WorldOfVictoria.Rendering.Character
 
         private void CleanupGeneratedVisuals()
         {
-            zombieModel = null;
             visualRoot = null;
             motionRoot = null;
             modelRoot = null;
+            headBone = null;
+            leftArmBone = null;
+            rightArmBone = null;
+            leftForeArmBone = null;
+            rightForeArmBone = null;
             rigAnimator = null;
-            usingHighDetailModel = false;
             DestroyAnimationGraph();
 
             for (var i = transform.childCount - 1; i >= 0; i--)
@@ -543,8 +360,9 @@ namespace WorldOfVictoria.Rendering.Character
             motionRoot.localRotation = Quaternion.Euler(lean, 0f, -roll);
             motionRoot.localScale = new Vector3(1f - stretch * 0.4f, 1f + stretch, 1f - stretch * 0.4f);
 
-            modelRoot.localRotation = Quaternion.Euler(modelEulerOffset + new Vector3(headPitchDegrees * 0.15f, 0f, 0f));
+            modelRoot.localRotation = Quaternion.Euler(modelEulerOffset);
             UpdateAnimationBlend(locomotionWeight);
+            ApplyZombieUpperBodyPose(walkPhase, locomotionWeight, headPitchDegrees);
         }
 
         private void UpdateAnimationBlend(float locomotionWeight)
@@ -554,8 +372,8 @@ namespace WorldOfVictoria.Rendering.Character
                 return;
             }
 
-            var runWeight = Mathf.Clamp01((locomotionWeight - 0.68f) / 0.32f);
-            var walkWeight = locomotionWeight * (1f - runWeight);
+            var runWeight = 0f;
+            var walkWeight = locomotionWeight;
             var idleWeight = Mathf.Clamp01(1f - locomotionWeight);
             var total = idleWeight + walkWeight + runWeight;
 
@@ -571,8 +389,73 @@ namespace WorldOfVictoria.Rendering.Character
             animationMixer.SetInputWeight(2, runWeight);
 
             idlePlayable.SetSpeed(1f);
-            walkPlayable.SetSpeed(Mathf.Lerp(0.85f, 1.05f, locomotionWeight));
-            runPlayable.SetSpeed(Mathf.Lerp(0.9f, 1.08f, locomotionWeight));
+            walkPlayable.SetSpeed(Mathf.Lerp(0.62f, 0.82f, locomotionWeight));
+            runPlayable.SetSpeed(0f);
+        }
+
+        private void CacheRigBones(Transform instanceRoot)
+        {
+            headBone = FindChildRecursive(instanceRoot, "Head");
+            leftArmBone = FindChildRecursive(instanceRoot, "LeftArm");
+            rightArmBone = FindChildRecursive(instanceRoot, "RightArm");
+            leftForeArmBone = FindChildRecursive(instanceRoot, "LeftForeArm");
+            rightForeArmBone = FindChildRecursive(instanceRoot, "RightForeArm");
+
+            if (headBone != null) headBaseRotation = headBone.localRotation;
+            if (leftArmBone != null) leftArmBaseRotation = leftArmBone.localRotation;
+            if (rightArmBone != null) rightArmBaseRotation = rightArmBone.localRotation;
+            if (leftForeArmBone != null) leftForeArmBaseRotation = leftForeArmBone.localRotation;
+            if (rightForeArmBone != null) rightForeArmBaseRotation = rightForeArmBone.localRotation;
+        }
+
+        private void ApplyZombieUpperBodyPose(float walkPhase, float locomotionWeight, float headPitchDegrees)
+        {
+            if (headBone != null)
+            {
+                headBone.localRotation = headBaseRotation * Quaternion.Euler(headPitchDegrees * 0.55f, 0f, 0f);
+            }
+
+            var swing = Mathf.Sin(walkPhase) * zombieArmSwingAmplitude * Mathf.Lerp(0.35f, 1f, locomotionWeight);
+            var armPitch = zombieArmForwardPitch;
+
+            if (leftArmBone != null)
+            {
+                leftArmBone.localRotation = leftArmBaseRotation * Quaternion.Euler(armPitch + swing, 0f, 0f);
+            }
+
+            if (rightArmBone != null)
+            {
+                rightArmBone.localRotation = rightArmBaseRotation * Quaternion.Euler(armPitch - swing, 0f, 0f);
+            }
+
+            if (leftForeArmBone != null)
+            {
+                leftForeArmBone.localRotation = leftForeArmBaseRotation * Quaternion.Euler(zombieForearmBend, 0f, 0f);
+            }
+
+            if (rightForeArmBone != null)
+            {
+                rightForeArmBone.localRotation = rightForeArmBaseRotation * Quaternion.Euler(zombieForearmBend, 0f, 0f);
+            }
+        }
+
+        private static Transform FindChildRecursive(Transform root, string childName)
+        {
+            if (root.name == childName)
+            {
+                return root;
+            }
+
+            for (var i = 0; i < root.childCount; i++)
+            {
+                var match = FindChildRecursive(root.GetChild(i), childName);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
         }
 
         private static Transform CreatePivot(string name, Transform parent, Vector3 localPosition, Quaternion localRotation)
